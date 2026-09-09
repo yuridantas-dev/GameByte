@@ -1,0 +1,8 @@
+node_modules/
+.venv/
+env/
+venv/
+.env
+dist/
+.vscode/
+.DS_Store
