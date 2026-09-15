@@ -5,6 +5,9 @@ export type ScreenTab = "home" | "tracks" | "ranking" | "profile";
 
 interface AppContextType {
   isLoggedIn: boolean;
+  isAppLoading: boolean;
+  loadingMessage: string;
+  setAppLoading: (loading: boolean, message?: string) => void;
   login: () => void;
   logout: () => void;
   currentTab: ScreenTab;
@@ -24,6 +27,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState("Iniciando o GameByte...");
   const [currentTab, setCurrentTab] = useState<ScreenTab>("home");
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [totalXp, setTotalXp] = useState(1240);
@@ -37,13 +42,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ai: 1,
   });
 
+  const setAppLoading = (loading: boolean, message = "Carregando...") => {
+    setLoadingMessage(message);
+    setIsAppLoading(loading);
+  };
+
   const login = () => {
-    setIsLoggedIn(true);
-    setCurrentTab("home");
+    setIsAppLoading(true);
+    setLoadingMessage("Conectando sua conta...");
+    setTimeout(() => {
+      setIsLoggedIn(true);
+      setCurrentTab("home");
+      setIsAppLoading(false);
+    }, 1200);
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
+    setIsAppLoading(true);
+    setLoadingMessage("Desconectando...");
+    setTimeout(() => {
+      setIsLoggedIn(false);
+      setIsAppLoading(false);
+    }, 800);
   };
 
   const addXp = (amount: number) => {
@@ -82,6 +102,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
         isLoggedIn,
+        isAppLoading,
+        loadingMessage,
+        setAppLoading,
         login,
         logout,
         currentTab,

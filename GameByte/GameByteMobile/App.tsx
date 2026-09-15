@@ -9,9 +9,20 @@ import { TelaInicio } from "./src/screens/TelaInicio";
 import { TelaTrilhas } from "./src/screens/TelaTrilhas";
 import { TelaRanking } from "./src/screens/TelaRanking";
 import { TelaPerfil } from "./src/screens/TelaPerfil";
+import { TelaCarregamento } from "./src/screens/TelaCarregamento";
 
 function MainApp() {
-  const { isLoggedIn, currentTab } = useApp();
+  const { isLoggedIn, isAppLoading, loadingMessage, setAppLoading, currentTab } = useApp();
+
+  if (isAppLoading) {
+    return (
+      <TelaCarregamento
+        mensagem={loadingMessage}
+        duration={2200}
+        onFinish={() => setAppLoading(false)}
+      />
+    );
+  }
 
   if (!isLoggedIn) {
     return <TelaLogin />;

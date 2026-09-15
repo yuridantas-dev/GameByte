@@ -11,8 +11,6 @@ import {
 import { Zap, Target, Trophy, Flame, LogOut, Award, ShieldCheck, ChevronRight } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 
-const mascotProfile = require("../../assets/WhatsApp_Image_2026-08-21_at_12.07.41.jpeg");
-
 export function TelaPerfil() {
   const { totalXp, logout } = useApp();
 
@@ -24,13 +22,6 @@ export function TelaPerfil() {
     >
       {/* Profile Card */}
       <View style={styles.profileCard}>
-        {/* Background Mascot overlay */}
-        <Image
-          source={mascotProfile}
-          style={styles.mascotBg}
-          resizeMode="cover"
-        />
-
         <View style={styles.profileHeaderRow}>
           <View style={styles.avatarLarge}>
             <Text style={styles.avatarLargeText}>M</Text>
@@ -139,15 +130,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.08)",
     padding: 20,
     overflow: "hidden",
-  },
-  mascotBg: {
-    position: "absolute",
-    right: -20,
-    top: -20,
-    width: 130,
-    height: 130,
-    borderRadius: 30,
-    opacity: 0.35,
   },
   profileHeaderRow: {
     flexDirection: "row",

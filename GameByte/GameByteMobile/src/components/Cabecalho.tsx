@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, Platform } from "react
 import { Zap, Bell } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 
-const appIconImage = require("../../assets/WhatsApp_Image_2026-08-21_at_12.09.51__1_.jpeg");
+const appIconImage = require("../../assets/logo_clean_transparent.png");
 
 export function Cabecalho() {
   const { totalXp, currentTab, setCurrentTab } = useApp();

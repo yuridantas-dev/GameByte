@@ -15,22 +15,18 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Lock } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+const { width: screenWidth } = Dimensions.get("window");
 const isSmallDevice = screenWidth < 375;
 
 const mascotImage = require("../../assets/mascote_transparent.png");
-const appIconImage = require("../../assets/WhatsApp_Image_2026-08-21_at_12.09.51__1_.jpeg");
+const appIconImage = require("../../assets/logo_clean_transparent.png");
 
 export function TelaLogin() {
   const { login } = useApp();
   const [loading, setLoading] = useState(false);
 
   const handleLogin = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      login();
-    }, 600);
+    login();
   };
 
   return (
@@ -58,7 +54,7 @@ export function TelaLogin() {
             <View style={styles.decorativeRingTop} pointerEvents="none" />
             <View style={styles.decorativeRingBottom} pointerEvents="none" />
 
-            {/* Logo */}
+            {/* Top Logo */}
             <View style={styles.logoRow}>
               <View style={styles.logoIconBox}>
                 <Image
@@ -82,7 +78,7 @@ export function TelaLogin() {
               </Text>
             </View>
 
-            {/* Mascot Image with responsive positioning */}
+            {/* Mascot Image with responsive positioning (Right side) */}
             <View style={styles.mascotBox} pointerEvents="none">
               <Image
                 source={mascotImage}
@@ -247,13 +243,9 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     letterSpacing: -0.6,
   },
-  logoTextHighlight: {
-    fontWeight: "400",
-    color: "#f6c768",
-  },
   heroTextContainer: {
-    marginTop: 14,
-    maxWidth: isSmallDevice ? "56%" : "60%",
+    marginTop: isSmallDevice ? 18 : 24,
+    maxWidth: isSmallDevice ? "55%" : "58%",
     zIndex: 2,
   },
   tagline: {
@@ -262,7 +254,7 @@ const styles = StyleSheet.create({
     color: "#dfd6ff",
     letterSpacing: 1.4,
     textTransform: "uppercase",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   heroTitle: {
     fontSize: isSmallDevice ? 19 : 22,
@@ -270,23 +262,24 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#ffffff",
     letterSpacing: -0.5,
+    marginTop: 4,
   },
   highlightText: {
     color: "#f6c768",
   },
   heroDescription: {
     fontSize: 10.5,
-    lineHeight: 15,
+    lineHeight: 15.5,
     color: "#e2d9ff",
     opacity: 0.92,
-    marginTop: 6,
+    marginTop: 8,
   },
   mascotBox: {
     position: "absolute",
-    right: -20,
-    bottom: -15,
-    width: isSmallDevice ? 180 : 210,
-    height: isSmallDevice ? 180 : 210,
+    right: isSmallDevice ? -40 : -50,
+    bottom: isSmallDevice ? -18 : -22,
+    width: isSmallDevice ? 215 : 255,
+    height: isSmallDevice ? 215 : 255,
     zIndex: 1,
   },
   mascotImage: {
