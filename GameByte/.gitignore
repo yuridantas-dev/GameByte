@@ -1,8 +1,53 @@
+# ==========================================
+# GameByte - Git Ignore Unificado
+# ==========================================
+
+# Dependências
 node_modules/
+
+# Expo & Metro Bundler
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+
+# Certificados e Arquivos Nativos
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+*.tsbuildinfo
+
+# Pastas nativas geradas
+/ios
+/android
+
+# Variáveis de ambiente e Segredos
+.env
+.env*.local
+.env.production
+.env.development
+
+# Logs de depuração
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# IDEs e Sistema Operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Ambientes virtuais
 .venv/
 env/
 venv/
-.env
-dist/
-.vscode/
-.DS_Store
