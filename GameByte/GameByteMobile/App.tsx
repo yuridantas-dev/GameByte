@@ -43,6 +43,7 @@ function MainApp() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#160d2e" translucent={false} />
       <Cabecalho />
       <View style={styles.screenContainer}>{renderScreen()}</View>
       <MenuNavegacao />
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#160d2e",
-    paddingTop: Platform.OS === "android" ? RNStatusBar.currentHeight || 0 : 0,
+    paddingTop: 0,
   },
   screenContainer: {
     flex: 1,

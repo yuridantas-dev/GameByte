@@ -47,7 +47,7 @@ export function TelaCarregamento({
     spinLoop.start();
 
     // 3. Completion timer if onFinish provided
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (onFinish) {
       timer = setTimeout(() => {
         onFinish();

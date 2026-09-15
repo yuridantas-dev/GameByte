@@ -30,8 +30,8 @@ export function TelaLogin() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#160d2e" translucent={false} />
+    <View style={styles.rootContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#754fdf" translucent={false} />
 
       {/* Ambient background glow effects */}
       <View style={styles.glowTop} pointerEvents="none" />
@@ -139,15 +139,14 @@ export function TelaLogin() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  rootContainer: {
     flex: 1,
-    backgroundColor: "#160d2e",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0,
+    backgroundColor: "#20113f",
   },
   scrollContent: {
     flexGrow: 1,
@@ -184,15 +183,15 @@ const styles = StyleSheet.create({
     opacity: 0.22,
   },
 
-  // Hero Section
+  // Hero Section (Filled up to the top status bar)
   heroSection: {
     position: "relative",
-    paddingTop: Platform.OS === "ios" ? 28 : 20,
+    paddingTop: Platform.OS === "ios" ? 28 : 22,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    minHeight: isSmallDevice ? 230 : 260,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingBottom: 28,
+    minHeight: isSmallDevice ? 240 : 270,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     overflow: "hidden",
   },
   decorativeRingTop: {
