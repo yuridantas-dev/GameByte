@@ -5,6 +5,7 @@ export type ScreenTab = "home" | "tracks" | "ranking" | "profile";
 
 interface AppContextType {
   isLoggedIn: boolean;
+  setLoggedIn?: (loggedIn: boolean) => void;
   isAppLoading: boolean;
   loadingMessage: string;
   setAppLoading: (loading: boolean, message?: string) => void;
@@ -102,6 +103,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
         isLoggedIn,
+        setLoggedIn: setIsLoggedIn,
         isAppLoading,
         loadingMessage,
         setAppLoading,
