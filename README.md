@@ -1,3 +1,6 @@
+<img width="1024" height="1024" alt="WhatsApp Image 2026-08-21 at 12 07 41 (1)" src="https://github.com/user-attachments/assets/46c3c493-7174-47a0-b843-de76d0b230eb" />
+
+
 # 🎮 GameByte
 
 **Aprenda tecnologia jogando.**
