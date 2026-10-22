@@ -40,7 +40,6 @@ institucional `@faculdadecci.com.br`.
 
 | Tela | O que você encontra |
 |---|---|
-| **Boas-vindas** | Apresentação do app e o botão para começar |
 | **Login** | Entrada rápida com a conta Google da faculdade |
 | **Início** | Seu progresso do dia, seu XP e o botão para continuar estudando |
 | **Trilhas** | O mapa das fases, mostrando o que está concluído, liberado ou bloqueado |
