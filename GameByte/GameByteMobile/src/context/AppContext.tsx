@@ -72,6 +72,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const levelInfo = getLevelInfo(totalXp, selectedAvatarId);
 
+  const handleSetCurrentTab = (tab: ScreenTab) => {
+    if (userRole === "teacher" && (tab === "home" || tab === "tracks")) {
+      setCurrentTab("teacher");
+      return;
+    }
+    setCurrentTab(tab);
+  };
+
+  const handleSetUserRole = (role: UserRole) => {
+    setUserRole(role);
+    if (role === "teacher") {
+      setCurrentTab("teacher");
+    } else if (currentTab === "teacher") {
+      setCurrentTab("home");
+    }
+  };
+
   const setAppLoading = (loading: boolean, message = "Carregando...") => {
     setLoadingMessage(message);
     setIsAppLoading(loading);
@@ -82,7 +99,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLoadingMessage("Conectando sua conta...");
     setTimeout(() => {
       setIsLoggedIn(true);
-      setCurrentTab("home");
+      setCurrentTab(userRole === "teacher" ? "teacher" : "home");
       setIsAppLoading(false);
     }, 1200);
   };
@@ -204,9 +221,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         userRole,
-        setUserRole,
+        setUserRole: handleSetUserRole,
         currentTab,
-        setCurrentTab,
+        setCurrentTab: handleSetCurrentTab,
         selectedTrackId,
         setSelectedTrackId,
         totalXp,

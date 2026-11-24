@@ -23,7 +23,6 @@ import {
   Check,
   X,
   Trash2,
-  RotateCcw,
   BookOpen,
   LayoutGrid,
 } from "lucide-react-native";
@@ -41,7 +40,6 @@ export function TelaPainelProfessor() {
     addCustomQuestion,
     deleteCustomQuestion,
     setCurrentTab,
-    setUserRole,
   } = useApp();
 
   // 2 Abas principais limpas
@@ -194,19 +192,6 @@ export function TelaPainelProfessor() {
             <GraduationCap size={13} color="#facc15" />
             <Text style={styles.badgeDocenteText}>PAINEL DO DOCENTE · FACULDADE CCI</Text>
           </View>
-
-          {/* Botão de Alternar para Visão do Aluno */}
-          <TouchableOpacity
-            style={styles.switchRoleButton}
-            onPress={() => {
-              setUserRole("student");
-              setCurrentTab("home");
-            }}
-            activeOpacity={0.8}
-          >
-            <RotateCcw size={12} color="#c4b5fd" />
-            <Text style={styles.switchRoleText}>Visão do Aluno</Text>
-          </TouchableOpacity>
         </View>
 
         <Text style={styles.headerTitle}>Gestão de Turma & Conteúdo</Text>

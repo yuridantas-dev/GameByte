@@ -14,7 +14,7 @@ import { TelaPainelProfessor } from "./src/screens/TelaPainelProfessor";
 import { OutOfLivesModal } from "./src/components/OutOfLivesModal";
 
 function MainApp() {
-  const { isLoggedIn, isAppLoading, loadingMessage, setAppLoading, currentTab } = useApp();
+  const { isLoggedIn, isAppLoading, loadingMessage, setAppLoading, currentTab, userRole } = useApp();
 
   if (isAppLoading) {
     return (
@@ -31,6 +31,20 @@ function MainApp() {
   }
 
   const renderScreen = () => {
+    // Restrição estrita para docente: apenas Docente, Ranking e Perfil
+    if (userRole === "teacher") {
+      switch (currentTab) {
+        case "ranking":
+          return <TelaRanking />;
+        case "profile":
+          return <TelaPerfil />;
+        case "teacher":
+        default:
+          return <TelaPainelProfessor />;
+      }
+    }
+
+    // Visão do aluno: Início, Trilhas, Ranking e Perfil
     switch (currentTab) {
       case "tracks":
         return <TelaTrilhas />;
@@ -38,8 +52,6 @@ function MainApp() {
         return <TelaRanking />;
       case "profile":
         return <TelaPerfil />;
-      case "teacher":
-        return <TelaPainelProfessor />;
       default:
         return <TelaInicio />;
     }

@@ -7,7 +7,7 @@ import { HeartDisplay } from "./HeartDisplay";
 const appIconImage = require("../../assets/logo_clean_transparent.png");
 
 export function Cabecalho() {
-  const { levelInfo, lives, setShowOutOfLivesModal, setCurrentTab, userRole, setUserRole } = useApp();
+  const { levelInfo, lives, setShowOutOfLivesModal, setCurrentTab, userRole } = useApp();
 
   return (
     <View style={styles.headerContainer}>
@@ -28,22 +28,11 @@ export function Cabecalho() {
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={styles.teacherHeaderBadge}
-            onPress={() => setCurrentTab("teacher")}
+            onPress={() => setCurrentTab("profile")}
             activeOpacity={0.8}
           >
-            <GraduationCap size={13} color="#facc15" />
+            <GraduationCap size={14} color="#facc15" />
             <Text style={styles.teacherHeaderBadgeText}>Prof. Rodrigo</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.roleTogglePill}
-            onPress={() => {
-              setUserRole("student");
-              setCurrentTab("home");
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.roleTogglePillText}>Ver Aluno</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -95,18 +84,6 @@ export function Cabecalho() {
               style={styles.avatarImage}
               resizeMode="cover"
             />
-          </TouchableOpacity>
-
-          {/* Quick Role Switcher Button to Teacher */}
-          <TouchableOpacity
-            style={styles.roleToggleIconBtn}
-            onPress={() => {
-              setUserRole("teacher");
-              setCurrentTab("teacher");
-            }}
-            activeOpacity={0.7}
-          >
-            <GraduationCap size={14} color="#facc15" />
           </TouchableOpacity>
         </View>
       )}

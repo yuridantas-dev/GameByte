@@ -8,15 +8,19 @@ export function MenuNavegacao() {
 
   const riskCount = classStudents.filter((s) => s.lastActiveDaysAgo > 7).length;
 
-  const navItems: { tab: ScreenTab; label: string; icon: any; badge?: number }[] = [
-    { tab: "home", label: "Início", icon: Home },
-    { tab: "tracks", label: "Trilhas", icon: LayoutGrid },
-    ...(userRole === "teacher"
-      ? [{ tab: "teacher" as ScreenTab, label: "Docente", icon: GraduationCap, badge: riskCount }]
-      : []),
-    { tab: "ranking", label: "Ranking", icon: Trophy },
-    { tab: "profile", label: "Perfil", icon: User },
-  ];
+  const navItems: { tab: ScreenTab; label: string; icon: any; badge?: number }[] =
+    userRole === "teacher"
+      ? [
+          { tab: "teacher" as ScreenTab, label: "Docente", icon: GraduationCap, badge: riskCount },
+          { tab: "ranking" as ScreenTab, label: "Ranking", icon: Trophy },
+          { tab: "profile" as ScreenTab, label: "Perfil", icon: User },
+        ]
+      : [
+          { tab: "home" as ScreenTab, label: "Início", icon: Home },
+          { tab: "tracks" as ScreenTab, label: "Trilhas", icon: LayoutGrid },
+          { tab: "ranking" as ScreenTab, label: "Ranking", icon: Trophy },
+          { tab: "profile" as ScreenTab, label: "Perfil", icon: User },
+        ];
 
   return (
     <View style={styles.navContainer}>

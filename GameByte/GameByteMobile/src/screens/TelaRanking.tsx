@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Crown, Flame, Users, ChevronRight, X, Sparkles, ShieldCheck } from "lucide-react-native";
+import { Crown, Flame, Users, ChevronRight, X, Sparkles, ShieldCheck, GraduationCap } from "lucide-react-native";
 import { leaderboardData, avatars3DData } from "../data/mockData";
 import { Avatar3D } from "../types";
 import { useApp } from "../context/AppContext";
@@ -21,7 +21,7 @@ const { width: screenWidth } = Dimensions.get("window");
 const isSmallDevice = screenWidth < 375;
 
 export function TelaRanking() {
-  const { totalXp, levelInfo } = useApp();
+  const { totalXp, levelInfo, userRole, classStudents } = useApp();
   const [period, setPeriod] = useState("Esta semana");
   const [inspectAvatar, setInspectAvatar] = useState<Avatar3D | null>(null);
 
@@ -227,37 +227,51 @@ export function TelaRanking() {
           );
         })}
 
-        {/* Current User Row */}
-        <View style={styles.currentUserRow}>
-          <Text style={styles.currentUserRank}>18</Text>
-          <TouchableOpacity
-            style={[styles.currentUserAvatar, { borderColor: levelInfo.currentAvatar.accentColor }]}
-            activeOpacity={0.8}
-            onPress={() => setInspectAvatar(levelInfo.currentAvatar)}
-          >
-            <Image
-              source={levelInfo.currentAvatar.image}
-              style={styles.tableAvatarImg}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
-          <View style={styles.currentUserInfo}>
-            <View style={styles.userNameRow}>
-              <Text style={styles.currentUserName}>Você · Marina</Text>
-              <View style={[styles.userLevelTag, { backgroundColor: levelInfo.currentAvatar.accentColor + "25" }]}>
-                <Text style={[styles.userLevelTagText, { color: levelInfo.currentAvatar.accentColor }]}>
-                  Nv. {levelInfo.level}
-                </Text>
-              </View>
+        {/* Current User Row (Aluno) ou Banner de Monitoramento (Docente) */}
+        {userRole === "teacher" ? (
+          <View style={styles.teacherRankBanner}>
+            <View style={styles.teacherRankIconBox}>
+              <GraduationCap size={16} color="#facc15" />
             </View>
-            <Text style={styles.currentUserSubText} numberOfLines={1}>
-              {levelInfo.currentAvatar.name} · {levelInfo.totalXp.toLocaleString("pt-BR")}/{levelInfo.levelMaxXp.toLocaleString("pt-BR")} XP
+            <View style={styles.teacherRankInfo}>
+              <Text style={styles.teacherRankTitle}>Acompanhamento Docente · Turma CCI</Text>
+              <Text style={styles.teacherRankSubtitle}>
+                Ranking em tempo real dos {classStudents.length} alunos matriculados em ADS.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.currentUserRow}>
+            <Text style={styles.currentUserRank}>18</Text>
+            <TouchableOpacity
+              style={[styles.currentUserAvatar, { borderColor: levelInfo.currentAvatar.accentColor }]}
+              activeOpacity={0.8}
+              onPress={() => setInspectAvatar(levelInfo.currentAvatar)}
+            >
+              <Image
+                source={levelInfo.currentAvatar.image}
+                style={styles.tableAvatarImg}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+            <View style={styles.currentUserInfo}>
+              <View style={styles.userNameRow}>
+                <Text style={styles.currentUserName}>Você · Marina</Text>
+                <View style={[styles.userLevelTag, { backgroundColor: levelInfo.currentAvatar.accentColor + "25" }]}>
+                  <Text style={[styles.userLevelTagText, { color: levelInfo.currentAvatar.accentColor }]}>
+                    Nv. {levelInfo.level}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.currentUserSubText} numberOfLines={1}>
+                {levelInfo.currentAvatar.name} · {levelInfo.totalXp.toLocaleString("pt-BR")}/{levelInfo.levelMaxXp.toLocaleString("pt-BR")} XP
+              </Text>
+            </View>
+            <Text style={styles.currentUserXp}>
+              {totalXp.toLocaleString("pt-BR")} XP
             </Text>
           </View>
-          <Text style={styles.currentUserXp}>
-            {totalXp.toLocaleString("pt-BR")} XP
-          </Text>
-        </View>
+        )}
       </View>
 
       {/* 3D Avatar Inspection Modal */}
@@ -671,6 +685,43 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: "900",
     color: "#f1c668",
+  },
+
+  // Teacher Rank Banner
+  teacherRankBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#2a1552",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(250, 204, 21, 0.3)",
+    gap: 12,
+  },
+  teacherRankIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(250, 204, 21, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(250, 204, 21, 0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  teacherRankInfo: {
+    flex: 1,
+  },
+  teacherRankTitle: {
+    fontSize: 12.5,
+    fontWeight: "800",
+    color: "#facc15",
+    letterSpacing: -0.2,
+  },
+  teacherRankSubtitle: {
+    fontSize: 10.5,
+    color: "#c4b5fd",
+    marginTop: 2,
+    lineHeight: 14,
   },
 
   // Avatar Modal

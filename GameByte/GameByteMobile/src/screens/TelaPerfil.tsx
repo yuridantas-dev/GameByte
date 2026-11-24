@@ -26,6 +26,11 @@ import {
   Clock,
   RotateCcw,
   GraduationCap,
+  BookOpen,
+  Users,
+  HelpCircle,
+  Plus,
+  Mail,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useApp } from "../context/AppContext";
@@ -46,11 +51,354 @@ export function TelaPerfil() {
     userRole,
     setUserRole,
     setCurrentTab,
+    classStudents,
+    createdQuestions,
   } = useApp();
 
   const [activeProfileTab, setActiveProfileTab] = useState<"avatars" | "badges" | "lives">("avatars");
+  const [activeTeacherTab, setActiveTeacherTab] = useState<"disciplinas" | "quizzes" | "institucional">("disciplinas");
   const [inspectAvatar, setInspectAvatar] = useState<Avatar3D | null>(null);
 
+  // ==================== VISÃO EXCLUSIVA DO PROFESSOR ====================
+  if (userRole === "teacher") {
+    const frequentCount = classStudents.filter((s) => s.lastActiveDaysAgo <= 7).length;
+    const frequencyRate = classStudents.length > 0 ? Math.round((frequentCount / classStudents.length) * 100) : 100;
+
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 1. Card de Identidade do Docente */}
+        <View style={styles.teacherProfileCard}>
+          <LinearGradient
+            colors={["#2b135e", "#190c38"]}
+            style={styles.teacherCardGradient}
+          >
+            <View style={styles.teacherHeaderRow}>
+              {/* Avatar Acadêmico com Badge de Docente */}
+              <View style={styles.teacherAvatarBox}>
+                <GraduationCap size={36} color="#facc15" />
+                <View style={styles.teacherStatusDot} />
+              </View>
+
+              <View style={styles.teacherMetaCol}>
+                <View style={styles.teacherNameRow}>
+                  <Text style={styles.teacherName}>Prof. Me. Rodrigo Medeiros</Text>
+                  <ShieldCheck size={16} color="#4ade80" />
+                </View>
+                <Text style={styles.teacherRoleTitle}>Docente Titular · Faculdade CCI</Text>
+                <Text style={styles.teacherDepartment}>
+                  Deptº de Tecnologia e Desenvolvimento de Sistemas (ADS)
+                </Text>
+
+                <View style={styles.teacherBadgesRow}>
+                  <View style={styles.teacherBadgePill}>
+                    <Text style={styles.teacherBadgePillText}>Matrícula: DOC-2024-089</Text>
+                  </View>
+                  <View style={[styles.teacherBadgePill, styles.teacherBadgePillActive]}>
+                    <Text style={styles.teacherBadgePillActiveText}>Semestre 2026.1</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Email Institucional */}
+            <View style={styles.teacherEmailBox}>
+              <Mail size={13} color="#a78bfa" />
+              <Text style={styles.teacherEmailText}>professor@portalcci.com.br</Text>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* 2. KPIs Acadêmicos */}
+        <View style={styles.teacherKpiGrid}>
+          <View style={styles.teacherKpiItem}>
+            <Users size={16} color="#38bdf8" />
+            <Text style={styles.teacherKpiValue}>{classStudents.length}</Text>
+            <Text style={styles.teacherKpiLabel}>ALUNOS</Text>
+          </View>
+
+          <View style={styles.teacherKpiItem}>
+            <BookOpen size={16} color="#a78bfa" />
+            <Text style={styles.teacherKpiValue}>02</Text>
+            <Text style={styles.teacherKpiLabel}>TURMAS</Text>
+          </View>
+
+          <View style={styles.teacherKpiItem}>
+            <HelpCircle size={16} color="#facc15" />
+            <Text style={styles.teacherKpiValue}>{createdQuestions.length}</Text>
+            <Text style={styles.teacherKpiLabel}>QUIZZES CRIADOS</Text>
+          </View>
+
+          <View style={styles.teacherKpiItem}>
+            <CheckCircle2 size={16} color="#4ade80" />
+            <Text style={styles.teacherKpiValue}>{frequencyRate}%</Text>
+            <Text style={styles.teacherKpiLabel}>FREQ. MÉDIA</Text>
+          </View>
+        </View>
+
+        {/* 3. Seletor de Abas do Perfil Docente */}
+        <View style={styles.tabSelector}>
+          <TouchableOpacity
+            style={[
+              styles.tabSelectorBtn,
+              activeTeacherTab === "disciplinas" && styles.tabSelectorBtnActive,
+            ]}
+            onPress={() => setActiveTeacherTab("disciplinas")}
+            activeOpacity={0.7}
+          >
+            <BookOpen
+              size={13}
+              color={activeTeacherTab === "disciplinas" ? "#ffffff" : "#a69abf"}
+            />
+            <Text
+              style={[
+                styles.tabSelectorText,
+                activeTeacherTab === "disciplinas" && styles.tabSelectorTextActive,
+              ]}
+            >
+              Disciplinas
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tabSelectorBtn,
+              activeTeacherTab === "quizzes" && styles.tabSelectorBtnActive,
+            ]}
+            onPress={() => setActiveTeacherTab("quizzes")}
+            activeOpacity={0.7}
+          >
+            <HelpCircle
+              size={13}
+              color={activeTeacherTab === "quizzes" ? "#ffffff" : "#a69abf"}
+            />
+            <Text
+              style={[
+                styles.tabSelectorText,
+                activeTeacherTab === "quizzes" && styles.tabSelectorTextActive,
+              ]}
+            >
+              Meus Quizzes ({createdQuestions.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tabSelectorBtn,
+              activeTeacherTab === "institucional" && styles.tabSelectorBtnActive,
+            ]}
+            onPress={() => setActiveTeacherTab("institucional")}
+            activeOpacity={0.7}
+          >
+            <ShieldCheck
+              size={13}
+              color={activeTeacherTab === "institucional" ? "#ffffff" : "#a69abf"}
+            />
+            <Text
+              style={[
+                styles.tabSelectorText,
+                activeTeacherTab === "institucional" && styles.tabSelectorTextActive,
+              ]}
+            >
+              Institucional
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ==================== ABA 1: DISCIPLINAS ==================== */}
+        {activeTeacherTab === "disciplinas" && (
+          <View style={styles.tabContentBox}>
+            <Text style={styles.sectionHeaderTitle}>Disciplinas sob Responsabilidade</Text>
+            <Text style={styles.sectionHeaderDesc}>
+              Cursos e matérias ativas vinculadas à sua grade docente no semestre letivo 2026.1:
+            </Text>
+
+            <View style={styles.disciplineCard}>
+              <View style={styles.disciplineTopRow}>
+                <View style={styles.disciplineIconBox}>
+                  <BookOpen size={16} color="#a78bfa" />
+                </View>
+                <View style={styles.disciplineMeta}>
+                  <Text style={styles.disciplineName}>Algoritmos e Lógica de Programação</Text>
+                  <Text style={styles.disciplineDetails}>ADS · 3º Semestre Noturno · Sala 204</Text>
+                </View>
+                <View style={styles.disciplineHoursBadge}>
+                  <Text style={styles.disciplineHoursText}>80h</Text>
+                </View>
+              </View>
+              <View style={styles.disciplineFooter}>
+                <Text style={styles.disciplineFooterText}>14 alunos matriculados · 100% frequência</Text>
+              </View>
+            </View>
+
+            <View style={styles.disciplineCard}>
+              <View style={styles.disciplineTopRow}>
+                <View style={styles.disciplineIconBoxBlue}>
+                  <BookOpen size={16} color="#38bdf8" />
+                </View>
+                <View style={styles.disciplineMeta}>
+                  <Text style={styles.disciplineName}>Programação Orientada a Objetos com Python</Text>
+                  <Text style={styles.disciplineDetails}>ADS · 3º Semestre Noturno · Laboratório 02</Text>
+                </View>
+                <View style={styles.disciplineHoursBadge}>
+                  <Text style={styles.disciplineHoursText}>80h</Text>
+                </View>
+              </View>
+              <View style={styles.disciplineFooter}>
+                <Text style={styles.disciplineFooterText}>14 alunos matriculados · 92% frequência</Text>
+              </View>
+            </View>
+
+            <View style={styles.disciplineCard}>
+              <View style={styles.disciplineTopRow}>
+                <View style={styles.disciplineIconBoxYellow}>
+                  <BookOpen size={16} color="#facc15" />
+                </View>
+                <View style={styles.disciplineMeta}>
+                  <Text style={styles.disciplineName}>Segurança da Informação e Criptografia</Text>
+                  <Text style={styles.disciplineDetails}>ADS · 1º Semestre Matutino · Sala 101</Text>
+                </View>
+                <View style={styles.disciplineHoursBadge}>
+                  <Text style={styles.disciplineHoursText}>60h</Text>
+                </View>
+              </View>
+              <View style={styles.disciplineFooter}>
+                <Text style={styles.disciplineFooterText}>Módulo Didático Integrado ao GameByte</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ==================== ABA 2: QUIZZES CRIADOS ==================== */}
+        {activeTeacherTab === "quizzes" && (
+          <View style={styles.tabContentBox}>
+            <View style={styles.tabTitleRowBetween}>
+              <View style={styles.flexItem}>
+                <Text style={styles.sectionHeaderTitle}>Quizzes Dinâmicos Cadastrados</Text>
+                <Text style={styles.sectionHeaderDesc}>
+                  Perguntas que você adicionou dinamicamente às trilhas dos alunos:
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.addQuizHeaderBtn}
+                onPress={() => setCurrentTab("teacher")}
+                activeOpacity={0.8}
+              >
+                <Plus size={13} color="#ffffff" />
+                <Text style={styles.addQuizHeaderBtnText}>Gerenciar</Text>
+              </TouchableOpacity>
+            </View>
+
+            {createdQuestions.length === 0 ? (
+              <View style={styles.emptyStateBox}>
+                <HelpCircle size={32} color="#7c3aed" />
+                <Text style={styles.emptyStateTitle}>Nenhuma questão cadastrada ainda</Text>
+                <Text style={styles.emptyStateDesc}>
+                  Acesse o Painel Docente para criar questões dinâmicas com alternativas e gabarito.
+                </Text>
+                <ButtonCustom
+                  title="Criar Questões no Painel Docente"
+                  variant="primary"
+                  onPress={() => setCurrentTab("teacher")}
+                  icon={<Plus size={14} color="#ffffff" />}
+                  style={styles.emptyStateBtn}
+                />
+              </View>
+            ) : (
+              createdQuestions.map((q) => (
+                <View key={q.id} style={styles.teacherQuizCard}>
+                  <View style={styles.teacherQuizCardHeader}>
+                    <View style={styles.quizTrackBadge}>
+                      <Text style={styles.quizTrackBadgeText}>
+                        {q.trackName} · Módulo {q.stageId}
+                      </Text>
+                    </View>
+                    <View style={styles.quizXpBadge}>
+                      <Text style={styles.quizXpBadgeText}>+{q.xp} XP</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.teacherQuizQuestionText}>{q.question}</Text>
+                  <View style={styles.quizCorrectRow}>
+                    <CheckCircle2 size={13} color="#4ade80" />
+                    <Text style={styles.quizCorrectText}>Gabarito: {q.correct}</Text>
+                  </View>
+                  {q.explanation && (
+                    <Text style={styles.quizExplanationText}>
+                      Justificativa: {q.explanation}
+                    </Text>
+                  )}
+                </View>
+              ))
+            )}
+          </View>
+        )}
+
+        {/* ==================== ABA 3: INSTITUCIONAL ==================== */}
+        {activeTeacherTab === "institucional" && (
+          <View style={styles.tabContentBox}>
+            <Text style={styles.sectionHeaderTitle}>Credenciais & Vínculo Institucional</Text>
+            <Text style={styles.sectionHeaderDesc}>
+              Informações oficiais do corpo docente registradas na Faculdade CCI:
+            </Text>
+
+            <View style={styles.institutionalInfoCard}>
+              <View style={styles.institutionalRow}>
+                <Text style={styles.institutionalLabel}>Instituição:</Text>
+                <Text style={styles.institutionalValue}>Faculdade CCI - Samambaia / DF</Text>
+              </View>
+              <View style={styles.institutionalDivider} />
+              <View style={styles.institutionalRow}>
+                <Text style={styles.institutionalLabel}>Curso Vinculado:</Text>
+                <Text style={styles.institutionalValue}>Análise e Desenvolvimento de Sistemas (ADS)</Text>
+              </View>
+              <View style={styles.institutionalDivider} />
+              <View style={styles.institutionalRow}>
+                <Text style={styles.institutionalLabel}>Coordenação:</Text>
+                <Text style={styles.institutionalValue}>Prof. Me. Anderson Silva</Text>
+              </View>
+              <View style={styles.institutionalDivider} />
+              <View style={styles.institutionalRow}>
+                <Text style={styles.institutionalLabel}>Regime de Trabalho:</Text>
+                <Text style={styles.institutionalValue}>Horista / 20 Horas Semanais</Text>
+              </View>
+              <View style={styles.institutionalDivider} />
+              <View style={styles.institutionalRow}>
+                <Text style={styles.institutionalLabel}>Autenticação MFA:</Text>
+                <Text style={styles.institutionalValueSuccess}>Ativo via Microsoft 365 Docente</Text>
+              </View>
+              <View style={styles.institutionalDivider} />
+              <View style={styles.institutionalRow}>
+                <Text style={styles.institutionalLabel}>Suporte de TI:</Text>
+                <Text style={styles.institutionalValueLink}>ti@faculdadecci.com.br</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Ações do Docente no Rodapé */}
+        <ButtonCustom
+          title="Acessar Painel do Docente"
+          variant="secondary"
+          onPress={() => setCurrentTab("teacher")}
+          icon={<GraduationCap size={16} color="#facc15" />}
+          style={styles.teacherAdminBtn}
+        />
+
+        <ButtonCustom
+          title="Sair da Conta"
+          variant="danger"
+          onPress={logout}
+          icon={<LogOut size={16} color="#f87171" />}
+          style={styles.logoutBtn}
+        />
+      </ScrollView>
+    );
+  }
+
+  // ==================== VISÃO EXCLUSIVA DO ALUNO ====================
   return (
     <ScrollView
       style={styles.container}
@@ -493,22 +841,6 @@ export function TelaPerfil() {
           </View>
         </View>
       )}
-
-      {/* Acesso ao Painel do Docente / Modo Professor (Seção 1.2 e 3.1) */}
-      <ButtonCustom
-        title={
-          userRole === "teacher"
-            ? "Acessar Painel do Docente (Minha Turma)"
-            : "Alternar para Modo Professor / Admin"
-        }
-        variant="secondary"
-        onPress={() => {
-          if (userRole !== "teacher") setUserRole("teacher");
-          setCurrentTab("teacher");
-        }}
-        icon={<GraduationCap size={16} color="#facc15" />}
-        style={styles.teacherAdminBtn}
-      />
 
       {/* Logout Action using ButtonCustom (Critério 4: Componentização) */}
       <ButtonCustom
@@ -1365,6 +1697,404 @@ const styles = StyleSheet.create({
   modalEquipBtnCustom: {
     marginTop: 18,
     width: "100%",
+  },
+  // Teacher Profile Card
+  teacherProfileCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    overflow: "hidden",
+    marginBottom: 16,
+  },
+  teacherCardGradient: {
+    padding: 20,
+  },
+  teacherHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  teacherAvatarBox: {
+    position: "relative",
+    width: 76,
+    height: 76,
+    borderRadius: 24,
+    backgroundColor: "rgba(250, 204, 21, 0.12)",
+    borderWidth: 2,
+    borderColor: "#facc15",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  teacherStatusDot: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#4ade80",
+    borderWidth: 2,
+    borderColor: "#190c38",
+  },
+  teacherMetaCol: {
+    flex: 1,
+  },
+  teacherNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  teacherName: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#ffffff",
+    letterSpacing: -0.3,
+  },
+  teacherRoleTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#facc15",
+    marginTop: 3,
+  },
+  teacherDepartment: {
+    fontSize: 11,
+    color: "#c4b5fd",
+    marginTop: 2,
+  },
+  teacherBadgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+  },
+  teacherBadgePill: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  teacherBadgePillText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#cbd5e1",
+  },
+  teacherBadgePillActive: {
+    backgroundColor: "rgba(74, 222, 128, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(74, 222, 128, 0.3)",
+  },
+  teacherBadgePillActiveText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#4ade80",
+  },
+  teacherEmailBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+  },
+  teacherEmailText: {
+    fontSize: 11.5,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    color: "#e2e8f0",
+  },
+
+  // Teacher KPIs
+  teacherKpiGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 20,
+  },
+  teacherKpiItem: {
+    flex: 1,
+    backgroundColor: "#211440",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    alignItems: "center",
+  },
+  teacherKpiValue: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#ffffff",
+    marginTop: 4,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  teacherKpiLabel: {
+    fontSize: 8.5,
+    fontWeight: "800",
+    color: "#94a3b8",
+    marginTop: 2,
+    textAlign: "center",
+  },
+
+  // Tab Content Box
+  tabContentBox: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  sectionHeaderTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#ffffff",
+    letterSpacing: -0.2,
+  },
+  sectionHeaderDesc: {
+    fontSize: 11.5,
+    color: "#94a3b8",
+    marginTop: 4,
+    marginBottom: 14,
+    lineHeight: 16,
+  },
+
+  // Disciplines
+  disciplineCard: {
+    backgroundColor: "#211440",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 14,
+    marginBottom: 10,
+  },
+  disciplineTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  disciplineIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(167, 139, 250, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disciplineIconBoxBlue: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(56, 189, 248, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disciplineIconBoxYellow: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(250, 204, 21, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disciplineMeta: {
+    flex: 1,
+  },
+  disciplineName: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  disciplineDetails: {
+    fontSize: 10.5,
+    color: "#94a3b8",
+    marginTop: 2,
+  },
+  disciplineHoursBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  disciplineHoursText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#c4b5fd",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  disciplineFooter: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.05)",
+  },
+  disciplineFooterText: {
+    fontSize: 10.5,
+    color: "#4ade80",
+    fontWeight: "600",
+  },
+
+  // Quizzes
+  tabTitleRowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
+  addQuizHeaderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#7c3aed",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  addQuizHeaderBtnText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+  teacherQuizCard: {
+    backgroundColor: "#211440",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 14,
+    marginBottom: 10,
+  },
+  teacherQuizCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  quizTrackBadge: {
+    backgroundColor: "rgba(124, 58, 237, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(124, 58, 237, 0.4)",
+  },
+  quizTrackBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#c4b5fd",
+  },
+  quizXpBadge: {
+    backgroundColor: "rgba(250, 204, 21, 0.15)",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  quizXpBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#facc15",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  teacherQuizQuestionText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#ffffff",
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  quizCorrectRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(74, 222, 128, 0.1)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginBottom: 4,
+  },
+  quizCorrectText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#4ade80",
+  },
+  quizExplanationText: {
+    fontSize: 10.5,
+    color: "#94a3b8",
+    fontStyle: "italic",
+    marginTop: 4,
+    lineHeight: 15,
+  },
+  emptyStateBox: {
+    backgroundColor: "#211440",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 24,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  emptyStateTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ffffff",
+    marginTop: 12,
+  },
+  emptyStateDesc: {
+    fontSize: 11.5,
+    color: "#94a3b8",
+    textAlign: "center",
+    marginTop: 6,
+    marginBottom: 16,
+    lineHeight: 16,
+  },
+  emptyStateBtn: {
+    width: "100%",
+  },
+
+  // Institutional Info
+  institutionalInfoCard: {
+    backgroundColor: "#211440",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 16,
+  },
+  institutionalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  institutionalLabel: {
+    fontSize: 11.5,
+    color: "#94a3b8",
+    fontWeight: "600",
+  },
+  institutionalValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#ffffff",
+    textAlign: "right",
+    flex: 1,
+    marginLeft: 12,
+  },
+  institutionalValueSuccess: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#4ade80",
+    textAlign: "right",
+    flex: 1,
+    marginLeft: 12,
+  },
+  institutionalValueLink: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#38bdf8",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    textAlign: "right",
+    flex: 1,
+    marginLeft: 12,
+  },
+  institutionalDivider: {
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
   teacherAdminBtn: {
     marginTop: 26,
