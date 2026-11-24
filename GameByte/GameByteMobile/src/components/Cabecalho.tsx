@@ -7,7 +7,7 @@ import { HeartDisplay } from "./HeartDisplay";
 const appIconImage = require("../../assets/logo_clean_transparent.png");
 
 export function Cabecalho() {
-  const { totalXp, levelInfo, lives, setShowOutOfLivesModal, setCurrentTab } = useApp();
+  const { levelInfo, lives, setShowOutOfLivesModal, setCurrentTab } = useApp();
 
   return (
     <View style={styles.headerContainer}>

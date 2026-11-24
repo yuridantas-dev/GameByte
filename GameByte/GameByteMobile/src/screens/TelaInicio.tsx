@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Flame, Zap, Trophy, Play, Award, Sparkles, Compass } from "lucide-react-native";
+import { Flame, Zap, Trophy, Award, Compass } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 import { ButtonCustom } from "../components/ButtonCustom";
 

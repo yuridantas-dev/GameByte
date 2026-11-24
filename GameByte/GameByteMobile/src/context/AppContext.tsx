@@ -48,7 +48,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lives, setLives] = useState(3.0); // 3 Corações cheios
   const maxLives = 3.0;
   const [showOutOfLivesModal, setShowOutOfLivesModal] = useState(false);
-  const [rechargeHoursRemaining, setRechargeHoursRemaining] = useState("04h 00m");
+  const [rechargeHoursRemaining] = useState("04h 00m");
   const [unlockedStages, setUnlockedStages] = useState<Record<string, number>>({
     network: 1,
     logic: 1,

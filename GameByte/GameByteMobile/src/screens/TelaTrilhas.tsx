@@ -33,7 +33,6 @@ import {
   Lightbulb,
   Terminal,
   Bug,
-  RotateCcw,
   CheckCircle,
   AlertTriangle,
 } from "lucide-react-native";
@@ -42,7 +41,7 @@ import { tracksData, trackStagesData, quizQuestionsData } from "../data/mockData
 import { Track, TrackStage } from "../types";
 import { HeartDisplay } from "../components/HeartDisplay";
 import { ButtonCustom } from "../components/ButtonCustom";
-import { getStageGameData, StageGameData, CodeBlock, BugHunterLine } from "../data/gameData";
+import { getStageGameData, CodeBlock, BugHunterLine } from "../data/gameData";
 
 const { width: screenWidth } = Dimensions.get("window");
 const isSmallDevice = screenWidth < 375;
@@ -56,7 +55,6 @@ export function TelaTrilhas() {
     addXp,
     getTrackProgress,
     isTrackUnlocked,
-    isTrackCompleted,
     lives,
     loseLife,
     setShowOutOfLivesModal,
@@ -72,7 +70,6 @@ export function TelaTrilhas() {
   // Code Puzzle state
   const [placedBlocks, setPlacedBlocks] = useState<CodeBlock[]>([]);
   const [availableBlocks, setAvailableBlocks] = useState<CodeBlock[]>([]);
-  const [puzzleSubmitted, setPuzzleSubmitted] = useState(false);
   const [puzzleSuccess, setPuzzleSuccess] = useState(false);
   const [puzzleErrorMsg, setPuzzleErrorMsg] = useState<string | null>(null);
 
@@ -101,7 +98,6 @@ export function TelaTrilhas() {
     const shuffled = [...game.puzzle.blocks].sort(() => Math.random() - 0.5);
     setAvailableBlocks(shuffled);
     setPlacedBlocks([]);
-    setPuzzleSubmitted(false);
     setPuzzleSuccess(false);
     setPuzzleErrorMsg(null);
 
@@ -184,14 +180,12 @@ export function TelaTrilhas() {
     const shuffled = [...stageGame.puzzle.blocks].sort(() => Math.random() - 0.5);
     setAvailableBlocks(shuffled);
     setPlacedBlocks([]);
-    setPuzzleSubmitted(false);
     setPuzzleSuccess(false);
     setPuzzleErrorMsg(null);
   };
 
   const handleExecutePuzzle = () => {
     if (!stageGame || placedBlocks.length === 0 || !activeStage || !selectedTrackId) return;
-    setPuzzleSubmitted(true);
 
     const isMatch =
       placedBlocks.length === stageGame.puzzle.correctOrder.length &&

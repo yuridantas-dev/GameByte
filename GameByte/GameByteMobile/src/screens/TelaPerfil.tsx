@@ -25,8 +25,6 @@ import {
   Heart,
   Clock,
   RotateCcw,
-  AlertTriangle,
-  ChevronRight,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useApp } from "../context/AppContext";
@@ -36,9 +34,7 @@ import { ButtonCustom } from "../components/ButtonCustom";
 
 export function TelaPerfil() {
   const {
-    totalXp,
     levelInfo,
-    selectedAvatarId,
     setSelectedAvatarId,
     lives,
     maxLives,
