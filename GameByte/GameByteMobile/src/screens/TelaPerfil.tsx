@@ -31,6 +31,7 @@ import {
   HelpCircle,
   Plus,
   Mail,
+  AlertTriangle,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useApp } from "../context/AppContext";
@@ -56,11 +57,12 @@ export function TelaPerfil() {
   } = useApp();
 
   const [activeProfileTab, setActiveProfileTab] = useState<"avatars" | "badges" | "lives">("avatars");
-  const [activeTeacherTab, setActiveTeacherTab] = useState<"disciplinas" | "quizzes" | "institucional">("disciplinas");
+  const [activeTeacherTab, setActiveTeacherTab] = useState<"turmas" | "institucional">("turmas");
   const [inspectAvatar, setInspectAvatar] = useState<Avatar3D | null>(null);
 
   // ==================== VISÃO EXCLUSIVA DO PROFESSOR ====================
   if (userRole === "teacher") {
+    const infrequentCount = classStudents.filter((s) => s.lastActiveDaysAgo > 7).length;
     const frequentCount = classStudents.filter((s) => s.lastActiveDaysAgo <= 7).length;
     const frequencyRate = classStudents.length > 0 ? Math.round((frequentCount / classStudents.length) * 100) : 100;
 
@@ -117,19 +119,21 @@ export function TelaPerfil() {
           <View style={styles.teacherKpiItem}>
             <Users size={16} color="#38bdf8" />
             <Text style={styles.teacherKpiValue}>{classStudents.length}</Text>
-            <Text style={styles.teacherKpiLabel}>ALUNOS</Text>
+            <Text style={styles.teacherKpiLabel}>TOTAL ALUNOS</Text>
           </View>
 
           <View style={styles.teacherKpiItem}>
             <BookOpen size={16} color="#a78bfa" />
-            <Text style={styles.teacherKpiValue}>02</Text>
-            <Text style={styles.teacherKpiLabel}>TURMAS</Text>
+            <Text style={styles.teacherKpiValue}>03</Text>
+            <Text style={styles.teacherKpiLabel}>TURMAS (ADS)</Text>
           </View>
 
           <View style={styles.teacherKpiItem}>
-            <HelpCircle size={16} color="#facc15" />
-            <Text style={styles.teacherKpiValue}>{createdQuestions.length}</Text>
-            <Text style={styles.teacherKpiLabel}>QUIZZES CRIADOS</Text>
+            <AlertTriangle size={16} color={infrequentCount > 0 ? "#f87171" : "#4ade80"} />
+            <Text style={[styles.teacherKpiValue, infrequentCount > 0 && styles.dangerBoldText]}>
+              {infrequentCount}
+            </Text>
+            <Text style={styles.teacherKpiLabel}>EM RISCO (&gt;7d)</Text>
           </View>
 
           <View style={styles.teacherKpiItem}>
@@ -144,44 +148,22 @@ export function TelaPerfil() {
           <TouchableOpacity
             style={[
               styles.tabSelectorBtn,
-              activeTeacherTab === "disciplinas" && styles.tabSelectorBtnActive,
+              activeTeacherTab === "turmas" && styles.tabSelectorBtnActive,
             ]}
-            onPress={() => setActiveTeacherTab("disciplinas")}
+            onPress={() => setActiveTeacherTab("turmas")}
             activeOpacity={0.7}
           >
             <BookOpen
               size={13}
-              color={activeTeacherTab === "disciplinas" ? "#ffffff" : "#a69abf"}
+              color={activeTeacherTab === "turmas" ? "#ffffff" : "#a69abf"}
             />
             <Text
               style={[
                 styles.tabSelectorText,
-                activeTeacherTab === "disciplinas" && styles.tabSelectorTextActive,
+                activeTeacherTab === "turmas" && styles.tabSelectorTextActive,
               ]}
             >
-              Disciplinas
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tabSelectorBtn,
-              activeTeacherTab === "quizzes" && styles.tabSelectorBtnActive,
-            ]}
-            onPress={() => setActiveTeacherTab("quizzes")}
-            activeOpacity={0.7}
-          >
-            <HelpCircle
-              size={13}
-              color={activeTeacherTab === "quizzes" ? "#ffffff" : "#a69abf"}
-            />
-            <Text
-              style={[
-                styles.tabSelectorText,
-                activeTeacherTab === "quizzes" && styles.tabSelectorTextActive,
-              ]}
-            >
-              Meus Quizzes ({createdQuestions.length})
+              Turmas & Disciplinas
             </Text>
           </TouchableOpacity>
 
@@ -208,12 +190,12 @@ export function TelaPerfil() {
           </TouchableOpacity>
         </View>
 
-        {/* ==================== ABA 1: DISCIPLINAS ==================== */}
-        {activeTeacherTab === "disciplinas" && (
+        {/* ==================== ABA 1: TURMAS & DISCIPLINAS ==================== */}
+        {activeTeacherTab === "turmas" && (
           <View style={styles.tabContentBox}>
-            <Text style={styles.sectionHeaderTitle}>Disciplinas sob Responsabilidade</Text>
+            <Text style={styles.sectionHeaderTitle}>Turmas sob Responsabilidade (ADS)</Text>
             <Text style={styles.sectionHeaderDesc}>
-              Cursos e matérias ativas vinculadas à sua grade docente no semestre letivo 2026.1:
+              Acompanhamento detalhado das turmas e matérias vinculadas à grade docente no semestre 2026.1:
             </Text>
 
             <View style={styles.disciplineCard}>
@@ -222,15 +204,17 @@ export function TelaPerfil() {
                   <BookOpen size={16} color="#a78bfa" />
                 </View>
                 <View style={styles.disciplineMeta}>
-                  <Text style={styles.disciplineName}>Algoritmos e Lógica de Programação</Text>
-                  <Text style={styles.disciplineDetails}>ADS · 3º Semestre Noturno · Sala 204</Text>
+                  <Text style={styles.disciplineName}>ADS 1 · 1º Semestre</Text>
+                  <Text style={styles.disciplineDetails}>Algoritmos e Lógica de Programação · Sala 204</Text>
                 </View>
                 <View style={styles.disciplineHoursBadge}>
                   <Text style={styles.disciplineHoursText}>80h</Text>
                 </View>
               </View>
               <View style={styles.disciplineFooter}>
-                <Text style={styles.disciplineFooterText}>14 alunos matriculados · 100% frequência</Text>
+                <Text style={styles.disciplineFooterText}>
+                  {classStudents.filter((s) => s.turma === "ADS 1").length} alunos matriculados
+                </Text>
               </View>
             </View>
 
@@ -240,15 +224,17 @@ export function TelaPerfil() {
                   <BookOpen size={16} color="#38bdf8" />
                 </View>
                 <View style={styles.disciplineMeta}>
-                  <Text style={styles.disciplineName}>Programação Orientada a Objetos com Python</Text>
-                  <Text style={styles.disciplineDetails}>ADS · 3º Semestre Noturno · Laboratório 02</Text>
+                  <Text style={styles.disciplineName}>ADS 2 · 2º Semestre</Text>
+                  <Text style={styles.disciplineDetails}>Desenvolvimento Web e Banco de Dados · Lab 02</Text>
                 </View>
                 <View style={styles.disciplineHoursBadge}>
                   <Text style={styles.disciplineHoursText}>80h</Text>
                 </View>
               </View>
               <View style={styles.disciplineFooter}>
-                <Text style={styles.disciplineFooterText}>14 alunos matriculados · 92% frequência</Text>
+                <Text style={styles.disciplineFooterText}>
+                  {classStudents.filter((s) => s.turma === "ADS 2").length} alunos matriculados
+                </Text>
               </View>
             </View>
 
@@ -258,85 +244,23 @@ export function TelaPerfil() {
                   <BookOpen size={16} color="#facc15" />
                 </View>
                 <View style={styles.disciplineMeta}>
-                  <Text style={styles.disciplineName}>Segurança da Informação e Criptografia</Text>
-                  <Text style={styles.disciplineDetails}>ADS · 1º Semestre Matutino · Sala 101</Text>
+                  <Text style={styles.disciplineName}>ADS 3 · 3º Semestre</Text>
+                  <Text style={styles.disciplineDetails}>Programação com Python e Engenharia de Software · Sala 101</Text>
                 </View>
                 <View style={styles.disciplineHoursBadge}>
-                  <Text style={styles.disciplineHoursText}>60h</Text>
+                  <Text style={styles.disciplineHoursText}>80h</Text>
                 </View>
               </View>
               <View style={styles.disciplineFooter}>
-                <Text style={styles.disciplineFooterText}>Módulo Didático Integrado ao GameByte</Text>
+                <Text style={styles.disciplineFooterText}>
+                  {classStudents.filter((s) => s.turma === "ADS 3").length} alunos matriculados
+                </Text>
               </View>
             </View>
           </View>
         )}
 
-        {/* ==================== ABA 2: QUIZZES CRIADOS ==================== */}
-        {activeTeacherTab === "quizzes" && (
-          <View style={styles.tabContentBox}>
-            <View style={styles.tabTitleRowBetween}>
-              <View style={styles.flexItem}>
-                <Text style={styles.sectionHeaderTitle}>Quizzes Dinâmicos Cadastrados</Text>
-                <Text style={styles.sectionHeaderDesc}>
-                  Perguntas que você adicionou dinamicamente às trilhas dos alunos:
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.addQuizHeaderBtn}
-                onPress={() => setCurrentTab("teacher")}
-                activeOpacity={0.8}
-              >
-                <Plus size={13} color="#ffffff" />
-                <Text style={styles.addQuizHeaderBtnText}>Gerenciar</Text>
-              </TouchableOpacity>
-            </View>
-
-            {createdQuestions.length === 0 ? (
-              <View style={styles.emptyStateBox}>
-                <HelpCircle size={32} color="#7c3aed" />
-                <Text style={styles.emptyStateTitle}>Nenhuma questão cadastrada ainda</Text>
-                <Text style={styles.emptyStateDesc}>
-                  Acesse o Painel Docente para criar questões dinâmicas com alternativas e gabarito.
-                </Text>
-                <ButtonCustom
-                  title="Criar Questões no Painel Docente"
-                  variant="primary"
-                  onPress={() => setCurrentTab("teacher")}
-                  icon={<Plus size={14} color="#ffffff" />}
-                  style={styles.emptyStateBtn}
-                />
-              </View>
-            ) : (
-              createdQuestions.map((q) => (
-                <View key={q.id} style={styles.teacherQuizCard}>
-                  <View style={styles.teacherQuizCardHeader}>
-                    <View style={styles.quizTrackBadge}>
-                      <Text style={styles.quizTrackBadgeText}>
-                        {q.trackName} · Módulo {q.stageId}
-                      </Text>
-                    </View>
-                    <View style={styles.quizXpBadge}>
-                      <Text style={styles.quizXpBadgeText}>+{q.xp} XP</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.teacherQuizQuestionText}>{q.question}</Text>
-                  <View style={styles.quizCorrectRow}>
-                    <CheckCircle2 size={13} color="#4ade80" />
-                    <Text style={styles.quizCorrectText}>Gabarito: {q.correct}</Text>
-                  </View>
-                  {q.explanation && (
-                    <Text style={styles.quizExplanationText}>
-                      Justificativa: {q.explanation}
-                    </Text>
-                  )}
-                </View>
-              ))
-            )}
-          </View>
-        )}
-
-        {/* ==================== ABA 3: INSTITUCIONAL ==================== */}
+        {/* ==================== ABA 2: INSTITUCIONAL ==================== */}
         {activeTeacherTab === "institucional" && (
           <View style={styles.tabContentBox}>
             <Text style={styles.sectionHeaderTitle}>Credenciais & Vínculo Institucional</Text>

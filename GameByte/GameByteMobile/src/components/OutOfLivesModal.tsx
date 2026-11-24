@@ -43,7 +43,7 @@ export function OutOfLivesModal() {
             <HeartCrack size={42} color="#ef4444" />
           </View>
 
-          <Text style={styles.title}>Vidas Esgotadas! 💔</Text>
+          <Text style={styles.title}>Vidas Esgotadas!</Text>
           <Text style={styles.subtitle}>
             Você perdeu todos os seus 3 corações nos desafios. É hora de fazer uma pausa para recarregar as baterias mentais!
           </Text>

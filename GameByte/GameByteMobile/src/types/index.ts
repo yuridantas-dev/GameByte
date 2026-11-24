@@ -104,6 +104,8 @@ export interface ClassStudent {
   lastActiveDate: string;
   riskOfDropout: boolean;
   notes?: string;
+  turma: "ADS 1" | "ADS 2" | "ADS 3";
+  semester: 1 | 2 | 3;
 }
 
 export interface CreatedQuestion {

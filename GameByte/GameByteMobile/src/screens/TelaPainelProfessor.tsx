@@ -6,7 +6,6 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Modal,
   Platform,
   TextInput,
 } from "react-native";
@@ -16,54 +15,62 @@ import {
   AlertTriangle,
   GraduationCap,
   Search,
-  Plus,
   CheckCircle2,
   Clock,
-  Zap,
   Check,
-  X,
-  Trash2,
   BookOpen,
-  LayoutGrid,
+  Calendar,
+  Layers,
+  Sparkles,
 } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
-import { CreatedQuestion } from "../types";
-import { avatars3DData, tracksData, trackStagesData, quizQuestionsData } from "../data/mockData";
-import { ButtonCustom } from "../components/ButtonCustom";
-import { InputCustom } from "../components/InputCustom";
+import { avatars3DData } from "../data/mockData";
+
+type TurmaFilter = "all" | "ADS 1" | "ADS 2" | "ADS 3";
+
+interface TurmaInfo {
+  id: TurmaFilter;
+  label: string;
+  semester: string;
+  description: string;
+}
+
+const turmasList: TurmaInfo[] = [
+  {
+    id: "all",
+    label: "Todas as Turmas",
+    semester: "Geral",
+    description: "Visão consolidada de todos os semestres",
+  },
+  {
+    id: "ADS 1",
+    label: "ADS 1",
+    semester: "1º Semestre",
+    description: "Algoritmos e Lógica de Programação",
+  },
+  {
+    id: "ADS 2",
+    label: "ADS 2",
+    semester: "2º Semestre",
+    description: "Desenvolvimento Web e Banco de Dados",
+  },
+  {
+    id: "ADS 3",
+    label: "ADS 3",
+    semester: "3º Semestre",
+    description: "Programação com Python e Engenharia",
+  },
+];
 
 export function TelaPainelProfessor() {
-  const {
-    classStudents,
-    recordStudentActivity,
-    createdQuestions,
-    addCustomQuestion,
-    deleteCustomQuestion,
-    setCurrentTab,
-  } = useApp();
+  const { classStudents, recordStudentActivity } = useApp();
 
-  // 2 Abas principais limpas
-  const [activeTab, setActiveTab] = useState<"frequencia" | "trilhas">("frequencia");
+  // Seleção de Turma (ADS 1, ADS 2, ADS 3 ou Todas)
+  const [selectedTurma, setSelectedTurma] = useState<TurmaFilter>("all");
 
-  // Filtros de Alunos & Frequência
+  // Filtros de Frequência e Busca
   const [filterMode, setFilterMode] = useState<"all" | "infrequent" | "frequent">("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Gestão de Trilhas
-  const [selectedTrackId, setSelectedTrackId] = useState<string>("logic");
-  const [selectedStageId, setSelectedStageId] = useState<number>(1);
-
-  // Modal de Criação Dinâmica de Questão
-  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [qQuestion, setQQuestion] = useState("");
-  const [qOptA, setQOptA] = useState("");
-  const [qOptB, setQOptB] = useState("");
-  const [qOptC, setQOptC] = useState("");
-  const [qOptD, setQOptD] = useState("");
-  const [qCorrectIndex, setQCorrectIndex] = useState(0);
-  const [qExplanation, setQExplanation] = useState("");
-  const [qXp, setQXp] = useState("60");
-  const [formError, setFormError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
   // Helper de Toast
@@ -72,12 +79,23 @@ export function TelaPainelProfessor() {
     setTimeout(() => setSuccessToast(null), 3000);
   };
 
-  // Métricas de Frequência
-  const infrequentStudents = classStudents.filter((s) => s.lastActiveDaysAgo > 7);
-  const frequentStudents = classStudents.filter((s) => s.lastActiveDaysAgo <= 7);
+  // Alunos pertencentes à turma selecionada
+  const studentsOfTurma = classStudents.filter((student) => {
+    if (selectedTurma === "all") return true;
+    return student.turma === selectedTurma;
+  });
 
-  // Filtragem da Lista de Alunos
-  const filteredStudents = classStudents.filter((student) => {
+  // Métricas da Turma Selecionada
+  const totalTurmaStudents = studentsOfTurma.length;
+  const infrequentStudents = studentsOfTurma.filter((s) => s.lastActiveDaysAgo > 7);
+  const frequentStudents = studentsOfTurma.filter((s) => s.lastActiveDaysAgo <= 7);
+  const frequencyRate =
+    totalTurmaStudents > 0
+      ? Math.round((frequentStudents.length / totalTurmaStudents) * 100)
+      : 100;
+
+  // Filtragem final com busca e modo de frequência
+  const filteredStudents = studentsOfTurma.filter((student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -98,75 +116,8 @@ export function TelaPainelProfessor() {
     return found ? found.image : avatars3DData[0].image;
   };
 
-  // Trilha Selecionada
-  const currentTrack = tracksData.find((t) => t.id === selectedTrackId) || tracksData[0];
-  const stagesOfTrack = trackStagesData[selectedTrackId] || [];
-  const currentStage = stagesOfTrack.find((s) => s.id === selectedStageId) || stagesOfTrack[0];
-
-  // Questões da Trilha/Fase Selecionada (Padrão + Dinâmicas criadas pelo professor)
-  const defaultQuestions = (quizQuestionsData[selectedTrackId]?.[selectedStageId] || []).map((q, idx) => ({
-    id: `def-${selectedTrackId}-${selectedStageId}-${idx}`,
-    trackId: selectedTrackId,
-    trackName: currentTrack.name,
-    stageId: selectedStageId,
-    question: q.question,
-    options: q.options,
-    correct: q.correct,
-    explanation: q.explanation || "Conceito fundamental abordado no módulo.",
-    xp: currentStage ? currentStage.xp : 60,
-    isDynamic: false,
-  }));
-
-  const dynamicQuestionsOfStage = createdQuestions
-    .filter((q) => q.trackId === selectedTrackId && q.stageId === selectedStageId)
-    .map((q) => ({
-      ...q,
-      isDynamic: true,
-    }));
-
-  const allQuestionsForStage = [...dynamicQuestionsOfStage, ...defaultQuestions];
-
-  // Salvar Nova Questão Dinâmica
-  const handleSaveQuestion = () => {
-    if (!qQuestion.trim()) {
-      setFormError("Informe o enunciado da pergunta.");
-      return;
-    }
-    if (!qOptA.trim() || !qOptB.trim() || !qOptC.trim() || !qOptD.trim()) {
-      setFormError("Preencha todas as 4 alternativas.");
-      return;
-    }
-    if (!qExplanation.trim()) {
-      setFormError("Informe a explicação pedagógica do gabarito.");
-      return;
-    }
-
-    const options = [qOptA.trim(), qOptB.trim(), qOptC.trim(), qOptD.trim()];
-    const correct = options[qCorrectIndex];
-
-    addCustomQuestion({
-      trackId: selectedTrackId,
-      trackName: currentTrack.name,
-      stageId: selectedStageId,
-      question: qQuestion.trim(),
-      options,
-      correct,
-      explanation: qExplanation.trim(),
-      xp: parseInt(qXp, 10) || 60,
-    });
-
-    setFormError(null);
-    setIsQuestionModalOpen(false);
-    showToast("Questão adicionada dinamicamente com sucesso à trilha!");
-
-    // Limpar formulário
-    setQQuestion("");
-    setQOptA("");
-    setQOptB("");
-    setQOptC("");
-    setQOptD("");
-    setQExplanation("");
-  };
+  const currentTurmaMeta =
+    turmasList.find((t) => t.id === selectedTurma) || turmasList[0];
 
   return (
     <ScrollView
@@ -194,16 +145,16 @@ export function TelaPainelProfessor() {
           </View>
         </View>
 
-        <Text style={styles.headerTitle}>Gestão de Turma & Conteúdo</Text>
+        <Text style={styles.headerTitle}>Gestão de Turmas & Frequência</Text>
         <Text style={styles.headerSubtitle}>
-          Análise e Desenvolvimento de Sistemas · Acompanhamento de Alunos e Trilhas
+          Análise e Desenvolvimento de Sistemas · Acompanhamento por Semestre
         </Text>
 
-        {/* Métricas Rápidas e Limpas de Frequência */}
+        {/* Métricas Rápidas de Frequência da Turma Selecionada */}
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
             <Users size={16} color="#38bdf8" />
-            <Text style={styles.kpiValue}>{classStudents.length}</Text>
+            <Text style={styles.kpiValue}>{totalTurmaStudents}</Text>
             <Text style={styles.kpiLabel}>ALUNOS</Text>
           </View>
 
@@ -213,7 +164,12 @@ export function TelaPainelProfessor() {
             <Text style={styles.kpiLabel}>FREQUENTES</Text>
           </View>
 
-          <View style={[styles.kpiCard, infrequentStudents.length > 0 && styles.kpiCardDanger]}>
+          <View
+            style={[
+              styles.kpiCard,
+              infrequentStudents.length > 0 && styles.kpiCardDanger,
+            ]}
+          >
             <AlertTriangle
               size={16}
               color={infrequentStudents.length > 0 ? "#f87171" : "#4ade80"}
@@ -226,553 +182,321 @@ export function TelaPainelProfessor() {
             >
               {infrequentStudents.length}
             </Text>
-            <Text style={styles.kpiLabel}>INFREQUENTES (&gt;7d)</Text>
+            <Text style={styles.kpiLabel}>EM RISCO (&gt;7d)</Text>
+          </View>
+
+          <View style={styles.kpiCard}>
+            <Clock size={16} color="#facc15" />
+            <Text style={styles.kpiValue}>{frequencyRate}%</Text>
+            <Text style={styles.kpiLabel}>FREQ. MÉDIA</Text>
           </View>
         </View>
       </LinearGradient>
 
-      {/* Seletor Segmentado das 2 Abas */}
-      <View style={styles.tabSelector}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === "frequencia" && styles.tabButtonActive]}
-          onPress={() => setActiveTab("frequencia")}
-          activeOpacity={0.8}
-        >
-          <Users
-            size={14}
-            color={activeTab === "frequencia" ? "#ffffff" : "#9487b0"}
-          />
-          <Text
-            style={[
-              styles.tabButtonText,
-              activeTab === "frequencia" && styles.tabButtonTextActive,
-            ]}
-          >
-            Alunos & Frequência {infrequentStudents.length > 0 ? `(${infrequentStudents.length} ⚠️)` : ""}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === "trilhas" && styles.tabButtonActive]}
-          onPress={() => setActiveTab("trilhas")}
-          activeOpacity={0.8}
-        >
-          <BookOpen
-            size={14}
-            color={activeTab === "trilhas" ? "#ffffff" : "#9487b0"}
-          />
-          <Text
-            style={[
-              styles.tabButtonText,
-              activeTab === "trilhas" && styles.tabButtonTextActive,
-            ]}
-          >
-            Gestão de Trilhas & Quizzes
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ==================== ABA 1: ALUNOS & FREQUÊNCIA ==================== */}
-      {activeTab === "frequencia" && (
-        <View style={styles.tabContent}>
-          {/* Banner de Atenção a Alunos Infrequentes */}
-          {infrequentStudents.length > 0 && (
-            <View style={styles.alertBanner}>
-              <AlertTriangle size={18} color="#f87171" />
-              <View style={styles.alertBannerTextCol}>
-                <Text style={styles.alertBannerTitle}>
-                  {infrequentStudents.length} aluno(s) sem acesso há mais de 7 dias
-                </Text>
-                <Text style={styles.alertBannerDesc}>
-                  Acompanhe a frequência da turma. O sistema destaca automaticamente os estudantes ausentes para ação pedagógica imediata.
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Busca */}
-          <View style={styles.searchBarBox}>
-            <Search size={15} color="#9487b0" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar aluno por nome ou e-mail..."
-              placeholderTextColor="#7a6e94"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <X size={15} color="#9487b0" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          {/* Filtros em Pílulas */}
-          <View style={styles.filterPillsRow}>
-            <TouchableOpacity
-              style={[styles.filterPill, filterMode === "all" && styles.filterPillActive]}
-              onPress={() => setFilterMode("all")}
-            >
-              <Text style={[styles.filterPillText, filterMode === "all" && styles.filterPillTextActive]}>
-                Todos ({classStudents.length})
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.filterPill,
-                filterMode === "infrequent" && styles.filterPillDangerActive,
-              ]}
-              onPress={() => setFilterMode("infrequent")}
-            >
-              <Text
-                style={[
-                  styles.filterPillText,
-                  filterMode === "infrequent" && styles.filterPillTextActive,
-                ]}
-              >
-                ⚠️ Infrequentes ({infrequentStudents.length})
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.filterPill,
-                filterMode === "frequent" && styles.filterPillActive,
-              ]}
-              onPress={() => setFilterMode("frequent")}
-            >
-              <Text
-                style={[
-                  styles.filterPillText,
-                  filterMode === "frequent" && styles.filterPillTextActive,
-                ]}
-              >
-                Frequentes ({frequentStudents.length})
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Lista de Alunos e Frequência */}
-          <View style={styles.studentsList}>
-            {filteredStudents.map((student, index) => {
-              const isInfrequent = student.lastActiveDaysAgo > 7;
-
-              return (
-                <View
-                  key={student.id}
-                  style={[
-                    styles.studentCard,
-                    isInfrequent && styles.studentCardDanger,
-                  ]}
-                >
-                  {/* Badge de Alerta para Infrequentes */}
-                  {isInfrequent && (
-                    <View style={styles.studentRiskBadge}>
-                      <AlertTriangle size={12} color="#ffffff" />
-                      <Text style={styles.studentRiskBadgeText}>
-                        INFREQUENTE: {student.lastActiveDaysAgo} DIAS SEM ACESSO
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={styles.studentMainRow}>
-                    {/* Avatar 3D do Aluno */}
-                    <View
-                      style={[
-                        styles.studentAvatarBox,
-                        isInfrequent && styles.studentAvatarBoxDanger,
-                      ]}
-                    >
-                      <Image
-                        source={getAvatarImage(student.avatarId)}
-                        style={styles.studentAvatarImg}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.studentRankBadge}>
-                        <Text style={styles.studentRankText}>#{index + 1}</Text>
-                      </View>
-                    </View>
-
-                    {/* Informações do Aluno */}
-                    <View style={styles.studentInfoCol}>
-                      <View style={styles.studentNameRow}>
-                        <Text style={styles.studentNameText} numberOfLines={1}>
-                          {student.name}
-                        </Text>
-                        <View style={styles.studentLevelTag}>
-                          <Text style={styles.studentLevelTagText}>NV. {student.level}</Text>
-                        </View>
-                      </View>
-
-                      <Text style={styles.studentEmailText}>{student.email}</Text>
-
-                      {/* Métricas e Progresso */}
-                      <View style={styles.studentStatsRow}>
-                        <View style={styles.studentStatItem}>
-                          <Zap size={11} color="#facc15" fill="#facc15" />
-                          <Text style={styles.studentStatText}>{student.xp.toLocaleString("pt-BR")} XP</Text>
-                        </View>
-                        <View style={styles.studentStatItem}>
-                          <Clock size={11} color="#38bdf8" />
-                          <Text style={styles.studentStatText}>{student.streak} dias sequência</Text>
-                        </View>
-                        <View style={styles.studentStatItem}>
-                          <BookOpen size={11} color="#c084fc" />
-                          <Text style={styles.studentStatText}>{student.tracksCompleted} trilhas</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Linha de Frequência e Ação Docente */}
-                  <View style={styles.studentFooterRow}>
-                    <View style={styles.studentLastActiveCol}>
-                      <View style={styles.activityDotRow}>
-                        <View
-                          style={[
-                            styles.activityDot,
-                            isInfrequent ? styles.activityDotRed : styles.activityDotGreen,
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.studentLastActiveText,
-                            isInfrequent && styles.studentLastActiveDanger,
-                          ]}
-                        >
-                          {isInfrequent
-                            ? `Ausente há ${student.lastActiveDaysAgo} dias (${student.lastActiveDate})`
-                            : `Frequente · ${student.lastActiveDate}`}
-                        </Text>
-                      </View>
-                      {student.notes && (
-                        <Text style={styles.studentNotesText} numberOfLines={1}>
-                          {student.notes}
-                        </Text>
-                      )}
-                    </View>
-
-                    {/* Botão de Registrar Presença / Apoio (Sem ajuste de XP) */}
-                    {isInfrequent && (
-                      <TouchableOpacity
-                        style={styles.resolveAlertButton}
-                        onPress={() => {
-                          recordStudentActivity(student.id);
-                          showToast(`Presença/Apoio registrado para ${student.name}!`);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <Check size={12} color="#ffffff" strokeWidth={3} />
-                        <Text style={styles.resolveAlertText}>Registrar Presença</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+      {/* Seção 1: Seleção de Turma / Semestre */}
+      <View style={styles.turmaSection}>
+        <View style={styles.sectionHeaderRow}>
+          <BookOpen size={16} color="#a78bfa" />
+          <Text style={styles.sectionTitle}>Selecione a Turma</Text>
         </View>
-      )}
+        <Text style={styles.sectionSubtitle}>
+          Filtre os alunos de acordo com o semestre letivo matriculado:
+        </Text>
 
-      {/* ==================== ABA 2: GESTÃO DE TRILHAS & QUIZZES (ORGANIZADA POR TRILHAS) ==================== */}
-      {activeTab === "trilhas" && (
-        <View style={styles.tabContent}>
-          {/* Seletor Horizontal de Trilhas */}
-          <Text style={styles.sectionHeaderTitle}>Selecione a Trilha para Administrar:</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.trackScrollList}
-          >
-            {tracksData.map((track) => {
-              const isSelected = track.id === selectedTrackId;
-              return (
-                <TouchableOpacity
-                  key={track.id}
-                  style={[
-                    styles.trackSelectCard,
-                    isSelected && styles.trackSelectCardActive,
-                  ]}
-                  onPress={() => {
-                    setSelectedTrackId(track.id);
-                    setSelectedStageId(1);
-                  }}
-                  activeOpacity={0.8}
-                >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.turmaChipsContainer}
+        >
+          {turmasList.map((turma) => {
+            const isSelected = selectedTurma === turma.id;
+            const turmaStudentCount =
+              turma.id === "all"
+                ? classStudents.length
+                : classStudents.filter((s) => s.turma === turma.id).length;
+            const turmaInfrequentCount =
+              turma.id === "all"
+                ? classStudents.filter((s) => s.lastActiveDaysAgo > 7).length
+                : classStudents.filter(
+                    (s) => s.turma === turma.id && s.lastActiveDaysAgo > 7
+                  ).length;
+
+            return (
+              <TouchableOpacity
+                key={turma.id}
+                style={[
+                  styles.turmaCard,
+                  isSelected && styles.turmaCardSelected,
+                ]}
+                onPress={() => setSelectedTurma(turma.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.turmaCardTop}>
                   <Text
                     style={[
-                      styles.trackSelectCardName,
-                      isSelected && styles.trackSelectCardNameActive,
+                      styles.turmaCardLabel,
+                      isSelected && styles.turmaCardLabelSelected,
                     ]}
-                    numberOfLines={1}
                   >
-                    {track.name}
+                    {turma.label}
                   </Text>
-                  <Text style={styles.trackSelectCardCategory}>
-                    {track.category === "professional" ? "Profissionalizante" : "Fundamental"} · {track.lessons}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* Cabeçalho da Trilha Atual com Ação de Nova Questão */}
-          <View style={styles.trackDetailBanner}>
-            <View style={styles.flexItem}>
-              <View style={styles.trackCategoryBadge}>
-                <Text style={styles.trackCategoryBadgeText}>
-                  TRILHA SELECIONADA · {currentTrack.category.toUpperCase()}
-                </Text>
-              </View>
-              <Text style={styles.trackDetailBannerTitle}>{currentTrack.name}</Text>
-              <Text style={styles.trackDetailBannerSubtitle}>
-                Administre os módulos, visualize os quizzes cadastrados e insira novas perguntas dinâmicas.
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.addQuestionCta}
-              onPress={() => setIsQuestionModalOpen(true)}
-              activeOpacity={0.85}
-            >
-              <Plus size={14} color="#ffffff" />
-              <Text style={styles.addQuestionCtaText}>Nova Questão</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Seletor de Fases / Módulos da Trilha */}
-          <View style={styles.stagesSelectorBox}>
-            <Text style={styles.stagesSelectorLabel}>Módulo / Fase da Trilha:</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.stagesChipsRow}
-            >
-              {stagesOfTrack.map((stage) => {
-                const isSelected = stage.id === selectedStageId;
-                return (
-                  <TouchableOpacity
-                    key={stage.id}
-                    style={[
-                      styles.stageChip,
-                      isSelected && styles.stageChipActive,
-                    ]}
-                    onPress={() => setSelectedStageId(stage.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.stageChipText,
-                        isSelected && styles.stageChipTextActive,
-                      ]}
-                    >
-                      Fase {stage.id}: {stage.title}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-
-          {/* Lista de Questões deste Módulo (Padrão + Dinâmicas) */}
-          <View style={styles.questionsContainer}>
-            <View style={styles.questionsListHeader}>
-              <Text style={styles.questionsCountText}>
-                {allQuestionsForStage.length} questão(ões) no Módulo {selectedStageId}
-              </Text>
-              <Text style={styles.questionsHintText}>
-                (Quizzes ativos para os estudantes no app)
-              </Text>
-            </View>
-
-            {allQuestionsForStage.map((q, idx) => (
-              <View key={q.id} style={styles.questionCard}>
-                <View style={styles.questionCardHeader}>
-                  <View style={styles.questionBadgeRow}>
-                    <View
-                      style={[
-                        styles.questionSourceBadge,
-                        q.isDynamic ? styles.questionSourceDynamic : styles.questionSourceDefault,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.questionSourceText,
-                          q.isDynamic ? styles.questionSourceTextDynamic : styles.questionSourceTextDefault,
-                        ]}
-                      >
-                        {q.isDynamic ? "CRIADA PELO PROFESSOR" : "EMENTA PADRÃO"}
+                  {turmaInfrequentCount > 0 && (
+                    <View style={styles.turmaAlertDot}>
+                      <Text style={styles.turmaAlertDotText}>
+                        {turmaInfrequentCount}
                       </Text>
                     </View>
-                    <Text style={styles.questionXpTag}>+{q.xp} XP</Text>
-                  </View>
-
-                  {/* Botão de Excluir Apenas se for Questão Criada pelo Professor */}
-                  {q.isDynamic && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        deleteCustomQuestion(q.id);
-                        showToast("Questão dinâmica removida com sucesso!");
-                      }}
-                      style={styles.deleteQuestionBtn}
-                    >
-                      <Trash2 size={13} color="#f87171" />
-                    </TouchableOpacity>
                   )}
                 </View>
 
-                <Text style={styles.questionTitleText}>
-                  {idx + 1}. {q.question}
+                <Text
+                  style={[
+                    styles.turmaCardSemester,
+                    isSelected && styles.turmaCardSemesterSelected,
+                  ]}
+                >
+                  {turma.semester}
                 </Text>
 
-                {/* Alternativas */}
-                <View style={styles.questionOptionsList}>
-                  {q.options.map((opt, optIdx) => {
-                    const isCorrect = opt === q.correct;
-                    return (
+                <View style={styles.turmaCardFooter}>
+                  <Users
+                    size={11}
+                    color={isSelected ? "#e9d5ff" : "#94a3b8"}
+                  />
+                  <Text
+                    style={[
+                      styles.turmaCardCountText,
+                      isSelected && styles.turmaCardCountTextSelected,
+                    ]}
+                  >
+                    {turmaStudentCount} alunos
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Banner Informativo da Turma Ativa */}
+      <View style={styles.turmaBanner}>
+        <View style={styles.turmaBannerIconBox}>
+          <Layers size={16} color="#c4b5fd" />
+        </View>
+        <View style={styles.turmaBannerMeta}>
+          <Text style={styles.turmaBannerTitle}>
+            Turma Selecionada: {currentTurmaMeta.label} ({currentTurmaMeta.semester})
+          </Text>
+          <Text style={styles.turmaBannerDesc}>
+            {currentTurmaMeta.description} · {totalTurmaStudents} alunos matriculados
+          </Text>
+        </View>
+      </View>
+
+      {/* Seção 2: Busca e Filtros de Frequência */}
+      <View style={styles.searchAndFiltersSection}>
+        <View style={styles.searchBox}>
+          <Search size={15} color="#94a3b8" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={`Buscar alunos em ${currentTurmaMeta.label}...`}
+            placeholderTextColor="#64748b"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        <View style={styles.filterPillsRow}>
+          <TouchableOpacity
+            style={[
+              styles.filterPill,
+              filterMode === "all" && styles.filterPillActive,
+            ]}
+            onPress={() => setFilterMode("all")}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.filterPillText,
+                filterMode === "all" && styles.filterPillTextActive,
+              ]}
+            >
+              Todos ({totalTurmaStudents})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.filterPill,
+              filterMode === "infrequent" && styles.filterPillDangerActive,
+            ]}
+            onPress={() => setFilterMode("infrequent")}
+            activeOpacity={0.7}
+          >
+            <AlertTriangle
+              size={12}
+              color={filterMode === "infrequent" ? "#ffffff" : "#f87171"}
+            />
+            <Text
+              style={[
+                styles.filterPillText,
+                filterMode === "infrequent" && styles.filterPillDangerTextActive,
+              ]}
+            >
+              Em Risco ({infrequentStudents.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.filterPill,
+              filterMode === "frequent" && styles.filterPillSuccessActive,
+            ]}
+            onPress={() => setFilterMode("frequent")}
+            activeOpacity={0.7}
+          >
+            <CheckCircle2
+              size={12}
+              color={filterMode === "frequent" ? "#ffffff" : "#4ade80"}
+            />
+            <Text
+              style={[
+                styles.filterPillText,
+                filterMode === "frequent" && styles.filterPillSuccessTextActive,
+              ]}
+            >
+              Frequentes ({frequentStudents.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Seção 3: Lista de Alunos e Frequência */}
+      <View style={styles.studentsListSection}>
+        {filteredStudents.length === 0 ? (
+          <View style={styles.emptyStateBox}>
+            <Users size={32} color="#64748b" />
+            <Text style={styles.emptyStateTitle}>Nenhum aluno encontrado</Text>
+            <Text style={styles.emptyStateDesc}>
+              Ajuste o termo de busca ou selecione outro filtro de frequência para visualizar os alunos.
+            </Text>
+          </View>
+        ) : (
+          filteredStudents.map((student) => {
+            const isInfrequent = student.lastActiveDaysAgo > 7;
+
+            return (
+              <View
+                key={student.id}
+                style={[
+                  styles.studentCard,
+                  isInfrequent && styles.studentCardInfrequent,
+                ]}
+              >
+                <View style={styles.studentCardTopRow}>
+                  <Image
+                    source={getAvatarImage(student.avatarId)}
+                    style={styles.studentAvatar}
+                    resizeMode="cover"
+                  />
+
+                  <View style={styles.studentMainMeta}>
+                    <View style={styles.studentNameLine}>
+                      <Text style={styles.studentName}>{student.name}</Text>
+                      {isInfrequent && (
+                        <View style={styles.badgeDangerMini}>
+                          <AlertTriangle size={10} color="#ef4444" />
+                          <Text style={styles.badgeDangerMiniText}>
+                            &gt;7d sem acesso
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.studentEmail}>{student.email}</Text>
+
+                    {/* Chips de Identificação do Aluno */}
+                    <View style={styles.studentChipsRow}>
+                      <View style={styles.studentTurmaBadge}>
+                        <Text style={styles.studentTurmaBadgeText}>
+                          {student.turma} · {student.semester}º Semestre
+                        </Text>
+                      </View>
+
                       <View
-                        key={optIdx}
                         style={[
-                          styles.questionOptionRow,
-                          isCorrect && styles.questionOptionRowCorrect,
+                          styles.frequencyStatusBadge,
+                          isInfrequent
+                            ? styles.frequencyStatusBadgeDanger
+                            : styles.frequencyStatusBadgeSuccess,
                         ]}
                       >
+                        {isInfrequent ? (
+                          <AlertTriangle size={10} color="#f87171" />
+                        ) : (
+                          <CheckCircle2 size={10} color="#4ade80" />
+                        )}
                         <Text
                           style={[
-                            styles.questionOptionLetter,
-                            isCorrect && styles.questionOptionLetterCorrect,
+                            styles.frequencyStatusBadgeText,
+                            isInfrequent
+                              ? styles.frequencyStatusBadgeTextDanger
+                              : styles.frequencyStatusBadgeTextSuccess,
                           ]}
                         >
-                          {String.fromCharCode(65 + optIdx)})
+                          {student.lastActiveDaysAgo === 0
+                            ? "Ativo hoje"
+                            : student.lastActiveDaysAgo === 1
+                            ? "Ativo ontem"
+                            : `Ativo há ${student.lastActiveDaysAgo} dias`}
                         </Text>
-                        <Text
-                          style={[
-                            styles.questionOptionText,
-                            isCorrect && styles.questionOptionTextCorrect,
-                          ]}
-                        >
-                          {opt}
-                        </Text>
-                        {isCorrect && <Check size={13} color="#4ade80" />}
                       </View>
-                    );
-                  })}
-                </View>
 
-                {/* Justificativa Pedagógica */}
-                <View style={styles.questionExplanationBox}>
-                  <Text style={styles.questionExplanationLabel}>JUSTIFICATIVA PEDAGÓGICA:</Text>
-                  <Text style={styles.questionExplanationText}>{q.explanation}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* ==================== MODAL: CRIAR NOVA QUESTÃO DINÂMICA ==================== */}
-      <Modal
-        visible={isQuestionModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsQuestionModalOpen(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, styles.modalCardLarge]}>
-            <View style={styles.modalHeaderRow}>
-              <View style={styles.flexItem}>
-                <Text style={styles.modalHeaderTitle}>Nova Questão Dinâmica</Text>
-                <Text style={styles.modalHeaderSubtitle}>
-                  Trilha: {currentTrack.name} · Fase {selectedStageId}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={() => setIsQuestionModalOpen(false)}>
-                <X size={18} color="#ffffff" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
-              {formError && (
-                <View style={styles.formErrorBox}>
-                  <AlertTriangle size={14} color="#f87171" />
-                  <Text style={styles.formErrorText}>{formError}</Text>
-                </View>
-              )}
-
-              {/* Enunciado */}
-              <InputCustom
-                label="ENUNCIADO DA PERGUNTA"
-                value={qQuestion}
-                onChangeText={setQQuestion}
-                placeholder="Ex: Em algoritmos, qual a finalidade da instrução RETORNE?"
-              />
-
-              {/* 4 Alternativas */}
-              <Text style={styles.fieldLabel}>Alternativas (marque a correta):</Text>
-
-              {[
-                { label: "A", val: qOptA, setVal: setQOptA, idx: 0 },
-                { label: "B", val: qOptB, setVal: setQOptB, idx: 1 },
-                { label: "C", val: qOptC, setVal: setQOptC, idx: 2 },
-                { label: "D", val: qOptD, setVal: setQOptD, idx: 3 },
-              ].map((opt) => (
-                <View key={opt.label} style={styles.optionInputRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.correctCheckCircle,
-                      qCorrectIndex === opt.idx && styles.correctCheckCircleActive,
-                    ]}
-                    onPress={() => setQCorrectIndex(opt.idx)}
-                  >
-                    {qCorrectIndex === opt.idx && <Check size={12} color="#ffffff" strokeWidth={3} />}
-                  </TouchableOpacity>
-                  <View style={styles.flexItem}>
-                    <InputCustom
-                      label={`Opção ${opt.label}${qCorrectIndex === opt.idx ? " (Gabarito Correto)" : ""}`}
-                      value={opt.val}
-                      onChangeText={opt.setVal}
-                      placeholder={`Texto da opção ${opt.label}...`}
-                    />
+                      <View style={styles.studentXpBadge}>
+                        <Text style={styles.studentXpBadgeText}>
+                          Nv. {student.level} · {student.xp.toLocaleString("pt-BR")} XP
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
-              ))}
 
-              {/* Explicação Pedagógica */}
-              <InputCustom
-                label="EXPLICAÇÃO PEDAGÓGICA (FEEDBACK DIDÁTICO)"
-                value={qExplanation}
-                onChangeText={setQExplanation}
-                placeholder="Por que esta é a resposta correta? Explique o raciocínio..."
-              />
+                {/* Nota / Observação Pedagógica */}
+                {student.notes && (
+                  <View style={styles.studentNotesBox}>
+                    <Text style={styles.studentNotesText}>
+                      Observação: {student.notes}
+                    </Text>
+                  </View>
+                )}
 
-              {/* XP Concedido */}
-              <InputCustom
-                label="XP CONCEDIDO"
-                value={qXp}
-                onChangeText={setQXp}
-                keyboardType="numeric"
-                placeholder="60"
-              />
-
-              <View style={styles.modalActionsRow}>
-                <ButtonCustom
-                  title="Cancelar"
-                  variant="secondary"
-                  onPress={() => setIsQuestionModalOpen(false)}
-                  style={styles.flexItem}
-                />
-                <ButtonCustom
-                  title="Salvar Questão"
-                  variant="primary"
-                  onPress={handleSaveQuestion}
-                  style={styles.flexItem}
-                />
+                {/* Linha de Ação do Professor: Registrar Presença / Suporte */}
+                <View style={styles.studentActionsRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.registerPresenceBtn,
+                      isInfrequent && styles.registerPresenceBtnHighlight,
+                    ]}
+                    onPress={() => {
+                      recordStudentActivity(student.id);
+                      showToast(
+                        `Presença e atendimento confirmados para ${student.name}.`
+                      );
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Check size={14} color="#ffffff" />
+                    <Text style={styles.registerPresenceBtnText}>
+                      {isInfrequent
+                        ? "Registrar Presença / Contato Pedagógico"
+                        : "Confirmar Presença em Aula"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+            );
+          })
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -784,41 +508,47 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 110,
-    maxWidth: 700,
+    paddingBottom: 120,
+    maxWidth: 900,
     width: "100%",
     alignSelf: "center",
-  },
-  flexItem: {
-    flex: 1,
   },
 
   // Toast
   toastContainer: {
+    position: "absolute",
+    top: 14,
+    left: 20,
+    right: 20,
+    backgroundColor: "#1e133d",
+    borderWidth: 1,
+    borderColor: "#4ade80",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#14532d",
-    borderWidth: 1,
-    borderColor: "#22c55e",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 12,
+    zIndex: 999,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   toastText: {
-    color: "#ffffff",
     fontSize: 12,
     fontWeight: "700",
+    color: "#e2e8f0",
     flex: 1,
   },
 
   // Header Hero
   headerHero: {
-    borderRadius: 22,
+    borderRadius: 24,
     padding: 18,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     marginBottom: 16,
   },
   headerTopRow: {
@@ -830,695 +560,446 @@ const styles = StyleSheet.create({
   badgeDocente: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
     backgroundColor: "rgba(250, 204, 21, 0.15)",
-    paddingHorizontal: 9,
+    borderWidth: 1,
+    borderColor: "rgba(250, 204, 21, 0.35)",
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 20,
   },
   badgeDocenteText: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: "800",
     color: "#facc15",
-    letterSpacing: 0.8,
-  },
-  switchRoleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  switchRoleText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#c4b5fd",
+    letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: "900",
     color: "#ffffff",
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
+    marginTop: 4,
   },
   headerSubtitle: {
-    fontSize: 11,
-    color: "#a99bc4",
-    marginTop: 2,
-    marginBottom: 14,
+    fontSize: 12,
+    color: "#c4b5fd",
+    marginTop: 4,
+    lineHeight: 16,
   },
 
   // KPIs
   kpiRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
+    marginTop: 16,
   },
   kpiCard: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 14,
     paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 6,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.06)",
   },
   kpiCardDanger: {
-    backgroundColor: "rgba(239, 68, 68, 0.18)",
-    borderColor: "rgba(239, 68, 68, 0.4)",
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderColor: "rgba(239, 68, 68, 0.35)",
   },
   kpiValue: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "900",
     color: "#ffffff",
     marginTop: 4,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   kpiValueDanger: {
     color: "#f87171",
   },
   kpiLabel: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-    fontSize: 8,
-    fontWeight: "700",
-    color: "#9487b0",
-    marginTop: 1,
-    letterSpacing: 0.6,
-  },
-
-  // Tabs Segmentadas
-  tabSelector: {
-    flexDirection: "row",
-    backgroundColor: "#20133e",
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.07)",
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  tabButtonActive: {
-    backgroundColor: "#6b4ee8",
-  },
-  tabButtonText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#9487b0",
-  },
-  tabButtonTextActive: {
-    color: "#ffffff",
+    fontSize: 8.5,
     fontWeight: "800",
+    color: "#94a3b8",
+    marginTop: 2,
+    textAlign: "center",
   },
 
-  tabContent: {
-    gap: 14,
+  // Seção de Turmas
+  turmaSection: {
+    marginBottom: 14,
   },
-
-  // Alerta de Risco Banner
-  alertBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.35)",
-    borderRadius: 16,
-    padding: 14,
-  },
-  alertBannerTextCol: {
-    flex: 1,
-  },
-  alertBannerTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#fca5a5",
-    marginBottom: 3,
-  },
-  alertBannerDesc: {
-    fontSize: 10.5,
-    color: "#cbd5e1",
-    lineHeight: 15,
-  },
-
-  // Busca e Filtros
-  searchBarBox: {
+  sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#20133e",
+    marginBottom: 4,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ffffff",
+    letterSpacing: -0.2,
+  },
+  sectionSubtitle: {
+    fontSize: 11,
+    color: "#94a3b8",
+    marginBottom: 10,
+  },
+  turmaChipsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 2,
+  },
+  turmaCard: {
+    width: 140,
+    backgroundColor: "#211440",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 12,
+  },
+  turmaCardSelected: {
+    backgroundColor: "#311863",
+    borderColor: "#a855f7",
+    shadowColor: "#a855f7",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  turmaCardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  turmaCardLabel: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#e2e8f0",
+  },
+  turmaCardLabelSelected: {
+    color: "#ffffff",
+  },
+  turmaAlertDot: {
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  turmaAlertDotText: {
+    fontSize: 9,
+    fontWeight: "900",
+    color: "#ffffff",
+  },
+  turmaCardSemester: {
+    fontSize: 10.5,
+    color: "#94a3b8",
+    marginTop: 2,
+    fontWeight: "600",
+  },
+  turmaCardSemesterSelected: {
+    color: "#c4b5fd",
+  },
+  turmaCardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.05)",
+  },
+  turmaCardCountText: {
+    fontSize: 10,
+    color: "#94a3b8",
+    fontWeight: "700",
+  },
+  turmaCardCountTextSelected: {
+    color: "#e9d5ff",
+  },
+
+  // Banner Informativo da Turma Ativa
+  turmaBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(124, 58, 237, 0.12)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(124, 58, 237, 0.25)",
+    padding: 12,
+    marginBottom: 16,
+    gap: 12,
+  },
+  turmaBannerIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "rgba(124, 58, 237, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  turmaBannerMeta: {
+    flex: 1,
+  },
+  turmaBannerTitle: {
+    fontSize: 12.5,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  turmaBannerDesc: {
+    fontSize: 11,
+    color: "#c4b5fd",
+    marginTop: 2,
+  },
+
+  // Busca e Filtros
+  searchAndFiltersSection: {
+    marginBottom: 14,
+  },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#211440",
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: Platform.OS === "ios" ? 10 : 6,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.08)",
+    gap: 8,
+    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 12,
     color: "#ffffff",
-    paddingVertical: 2,
+    fontSize: 12.5,
   },
   filterPillsRow: {
     flexDirection: "row",
     gap: 8,
   },
   filterPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#211440",
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   filterPillActive: {
-    backgroundColor: "#6b4ee8",
+    backgroundColor: "#5b21b6",
+    borderColor: "#7c3aed",
   },
   filterPillDangerActive: {
-    backgroundColor: "#ef4444",
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    borderColor: "#ef4444",
+  },
+  filterPillSuccessActive: {
+    backgroundColor: "rgba(74, 222, 128, 0.2)",
+    borderColor: "#4ade80",
   },
   filterPillText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
-    color: "#9487b0",
+    color: "#94a3b8",
   },
   filterPillTextActive: {
     color: "#ffffff",
   },
+  filterPillDangerTextActive: {
+    color: "#f87171",
+  },
+  filterPillSuccessTextActive: {
+    color: "#4ade80",
+  },
 
   // Lista de Alunos
-  studentsList: {
+  studentsListSection: {
     gap: 10,
   },
   studentCard: {
-    backgroundColor: "#20133e",
-    borderRadius: 18,
+    backgroundColor: "#211440",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.07)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     padding: 14,
-    overflow: "hidden",
   },
-  studentCardDanger: {
-    borderColor: "#ef4444",
-    backgroundColor: "rgba(239, 68, 68, 0.07)",
+  studentCardInfrequent: {
+    borderColor: "rgba(239, 68, 68, 0.4)",
+    backgroundColor: "rgba(33, 20, 64, 0.98)",
   },
-  studentRiskBadge: {
+  studentCardTopRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#ef4444",
-    marginHorizontal: -14,
-    marginTop: -14,
-    marginBottom: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  studentRiskBadgeText: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-    fontSize: 8.5,
-    fontWeight: "800",
-    color: "#ffffff",
-    letterSpacing: 0.8,
-  },
-  studentMainRow: {
-    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 12,
-    alignItems: "center",
   },
-  studentAvatarBox: {
-    position: "relative",
-    width: 46,
-    height: 46,
+  studentAvatar: {
+    width: 44,
+    height: 44,
     borderRadius: 14,
+    backgroundColor: "#160d2e",
     borderWidth: 1.5,
-    borderColor: "#6b4ee8",
-    overflow: "hidden",
+    borderColor: "rgba(255, 255, 255, 0.12)",
   },
-  studentAvatarBoxDanger: {
-    borderColor: "#ef4444",
-  },
-  studentAvatarImg: {
-    width: "100%",
-    height: "100%",
-  },
-  studentRankBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-    paddingHorizontal: 4,
-    borderTopLeftRadius: 6,
-  },
-  studentRankText: {
-    fontSize: 8,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
-  studentInfoCol: {
+  studentMainMeta: {
     flex: 1,
   },
-  studentNameRow: {
+  studentNameLine: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  studentNameText: {
+  studentName: {
     fontSize: 13.5,
     fontWeight: "800",
     color: "#ffffff",
-    flex: 1,
+    letterSpacing: -0.2,
   },
-  studentLevelTag: {
-    backgroundColor: "rgba(107, 78, 232, 0.25)",
-    borderRadius: 6,
+  badgeDangerMini: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(239, 68, 68, 0.18)",
     paddingHorizontal: 6,
     paddingVertical: 2,
+    borderRadius: 6,
   },
-  studentLevelTagText: {
-    fontSize: 8.5,
+  badgeDangerMiniText: {
+    fontSize: 9,
     fontWeight: "800",
-    color: "#c4b5fd",
+    color: "#f87171",
   },
-  studentEmailText: {
-    fontSize: 10,
-    color: "#8e80ab",
-    marginTop: 1,
-    marginBottom: 4,
+  studentEmail: {
+    fontSize: 11,
+    color: "#94a3b8",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    marginTop: 2,
   },
-  studentStatsRow: {
+  studentChipsRow: {
     flexDirection: "row",
-    gap: 12,
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
   },
-  studentStatItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
+  studentTurmaBadge: {
+    backgroundColor: "rgba(168, 85, 247, 0.15)",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(168, 85, 247, 0.3)",
   },
-  studentStatText: {
+  studentTurmaBadgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#d1c7e6",
+    color: "#d8b4fe",
   },
-  studentFooterRow: {
+  frequencyStatusBadge: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  frequencyStatusBadgeSuccess: {
+    backgroundColor: "rgba(74, 222, 128, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(74, 222, 128, 0.25)",
+  },
+  frequencyStatusBadgeDanger: {
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+  },
+  frequencyStatusBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  frequencyStatusBadgeTextSuccess: {
+    color: "#4ade80",
+  },
+  frequencyStatusBadgeTextDanger: {
+    color: "#f87171",
+  },
+  studentXpBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  studentXpBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#cbd5e1",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  studentNotesBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: "#7c3aed",
+  },
+  studentNotesText: {
+    fontSize: 11,
+    color: "#cbd5e1",
+    lineHeight: 15,
+    fontStyle: "italic",
+  },
+  studentActionsRow: {
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.05)",
   },
-  studentLastActiveCol: {
-    flex: 1,
-  },
-  activityDotRow: {
+  registerPresenceBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-  },
-  activityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  activityDotGreen: {
-    backgroundColor: "#4ade80",
-  },
-  activityDotRed: {
-    backgroundColor: "#ef4444",
-  },
-  studentLastActiveText: {
-    fontSize: 9.5,
-    color: "#9487b0",
-  },
-  studentLastActiveDanger: {
-    color: "#fca5a5",
-    fontWeight: "700",
-  },
-  studentNotesText: {
-    fontSize: 9,
-    color: "#7e729a",
-    fontStyle: "italic",
-    marginTop: 1,
-  },
-  resolveAlertButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#22c55e",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  resolveAlertText: {
-    fontSize: 10.5,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
-
-  // Gestão de Trilhas
-  sectionHeaderTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#ffffff",
-    marginBottom: 8,
-  },
-  trackScrollList: {
-    gap: 8,
-    paddingBottom: 4,
-  },
-  trackSelectCard: {
-    backgroundColor: "#20133e",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    minWidth: 160,
-  },
-  trackSelectCardActive: {
-    backgroundColor: "#6b4ee8",
-    borderColor: "#8b5cf6",
-  },
-  trackSelectCardName: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#ffffff",
-    marginBottom: 2,
-  },
-  trackSelectCardNameActive: {
-    color: "#ffffff",
-  },
-  trackSelectCardCategory: {
-    fontSize: 9,
-    color: "#a99bc4",
-  },
-
-  // Banner da Trilha Selecionada
-  trackDetailBanner: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-    backgroundColor: "#20133e",
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  trackCategoryBadge: {
-    backgroundColor: "rgba(107, 78, 232, 0.25)",
-    alignSelf: "flex-start",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  trackCategoryBadgeText: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-    fontSize: 8,
-    fontWeight: "800",
-    color: "#c4b5fd",
-  },
-  trackDetailBannerTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
-  trackDetailBannerSubtitle: {
-    fontSize: 10,
-    color: "#9487b0",
-    marginTop: 2,
-    lineHeight: 14,
-  },
-  addQuestionCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#6b4ee8",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#4f46e5",
+    paddingVertical: 9,
     borderRadius: 10,
   },
-  addQuestionCtaText: {
-    fontSize: 11,
+  registerPresenceBtnHighlight: {
+    backgroundColor: "#b91c1c",
+  },
+  registerPresenceBtnText: {
+    fontSize: 11.5,
     fontWeight: "800",
     color: "#ffffff",
   },
 
-  // Seletor de Fases da Trilha
-  stagesSelectorBox: {
-    gap: 6,
-  },
-  stagesSelectorLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#c4b5fd",
-  },
-  stagesChipsRow: {
-    gap: 6,
-    paddingBottom: 2,
-  },
-  stageChip: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  stageChipActive: {
-    backgroundColor: "#6b4ee8",
-    borderColor: "#8b5cf6",
-  },
-  stageChipText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    color: "#9487b0",
-  },
-  stageChipTextActive: {
-    color: "#ffffff",
-    fontWeight: "800",
-  },
-
-  // Container de Questões
-  questionsContainer: {
-    gap: 10,
-  },
-  questionsListHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  questionsCountText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
-  questionsHintText: {
-    fontSize: 10,
-    color: "#8a7d9e",
-  },
-  questionCard: {
-    backgroundColor: "#20133e",
+  // Empty State
+  emptyStateBox: {
+    backgroundColor: "#211440",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.07)",
-    padding: 14,
-  },
-  questionCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 30,
     alignItems: "center",
-    marginBottom: 8,
+    marginTop: 10,
   },
-  questionBadgeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  questionSourceBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  questionSourceDefault: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-  },
-  questionSourceDynamic: {
-    backgroundColor: "rgba(34, 197, 94, 0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(34, 197, 94, 0.35)",
-  },
-  questionSourceText: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-    fontSize: 8,
-    fontWeight: "800",
-  },
-  questionSourceTextDefault: {
-    color: "#a99bc4",
-  },
-  questionSourceTextDynamic: {
-    color: "#4ade80",
-  },
-  questionXpTag: {
-    fontSize: 9.5,
-    fontWeight: "800",
-    color: "#facc15",
-  },
-  deleteQuestionBtn: {
-    padding: 4,
-  },
-  questionTitleText: {
-    fontSize: 12.5,
+  emptyStateTitle: {
+    fontSize: 14,
     fontWeight: "800",
     color: "#ffffff",
-    lineHeight: 17,
-    marginBottom: 10,
-  },
-  questionOptionsList: {
-    gap: 5,
-    marginBottom: 10,
-  },
-  questionOptionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  questionOptionRowCorrect: {
-    backgroundColor: "rgba(34, 197, 94, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(34, 197, 94, 0.35)",
-  },
-  questionOptionLetter: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#9487b0",
-  },
-  questionOptionLetterCorrect: {
-    color: "#4ade80",
-  },
-  questionOptionText: {
-    fontSize: 10.5,
-    color: "#cbd5e1",
-    flex: 1,
-  },
-  questionOptionTextCorrect: {
-    color: "#ffffff",
-    fontWeight: "700",
-  },
-  questionExplanationBox: {
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: 8,
-    padding: 8,
-    borderLeftWidth: 2,
-    borderLeftColor: "#facc15",
-  },
-  questionExplanationLabel: {
-    fontSize: 8,
-    fontWeight: "800",
-    color: "#facc15",
-    marginBottom: 2,
-  },
-  questionExplanationText: {
-    fontSize: 9.5,
-    color: "#a99bc4",
-    lineHeight: 13,
-  },
-
-  // Modal de Criação de Questão
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  modalCard: {
-    width: "100%",
-    maxWidth: 420,
-    backgroundColor: "#1e113a",
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  modalCardLarge: {
-    maxHeight: "85%",
-  },
-  modalHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 14,
-  },
-  modalHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
-  modalHeaderSubtitle: {
-    fontSize: 10.5,
-    color: "#9487b0",
-    marginTop: 2,
-  },
-  modalScroll: {
-    marginTop: 4,
-  },
-  formErrorBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 10,
-  },
-  formErrorText: {
-    fontSize: 10.5,
-    color: "#fca5a5",
-    fontWeight: "700",
-    flex: 1,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#c4b5fd",
-    marginBottom: 6,
-  },
-  optionInputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 4,
-  },
-  correctCheckCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: "#6b4ee8",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 14,
-  },
-  correctCheckCircleActive: {
-    backgroundColor: "#22c55e",
-    borderColor: "#22c55e",
-  },
-  modalActionsRow: {
-    flexDirection: "row",
-    gap: 10,
     marginTop: 12,
+  },
+  emptyStateDesc: {
+    fontSize: 11.5,
+    color: "#94a3b8",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 16,
   },
 });

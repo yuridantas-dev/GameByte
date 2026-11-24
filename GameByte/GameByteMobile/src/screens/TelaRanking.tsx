@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Crown, Flame, Users, ChevronRight, X, Sparkles, ShieldCheck, GraduationCap } from "lucide-react-native";
+import { Crown, Flame, Users, ChevronRight, X, Sparkles, ShieldCheck, GraduationCap, Award } from "lucide-react-native";
 import { leaderboardData, avatars3DData } from "../data/mockData";
 import { Avatar3D } from "../types";
 import { useApp } from "../context/AppContext";
@@ -39,7 +39,6 @@ export function TelaRanking() {
       badgeBg: "rgba(203, 213, 225, 0.2)",
       badgeText: "#cbd5e1",
       ringColor: "rgba(148, 163, 184, 0.6)",
-      emoji: "🥈",
     },
     {
       ...leaderboardData[0],
@@ -50,7 +49,6 @@ export function TelaRanking() {
       badgeBg: "rgba(255, 215, 0, 0.3)",
       badgeText: "#ffd700",
       ringColor: "#facc15",
-      emoji: "👑",
     },
     {
       ...leaderboardData[2],
@@ -61,7 +59,6 @@ export function TelaRanking() {
       badgeBg: "rgba(205, 127, 50, 0.25)",
       badgeText: "#fca5a5",
       ringColor: "rgba(205, 127, 50, 0.6)",
-      emoji: "🥉",
     },
   ];
 
@@ -106,8 +103,10 @@ export function TelaRanking() {
               <View style={styles.podiumEmojiBox}>
                 {user.rank === 1 ? (
                   <Crown size={22} color="#f5c463" fill="#f5c463" />
+                ) : user.rank === 2 ? (
+                  <Award size={20} color="#cbd5e1" />
                 ) : (
-                  <Text style={styles.podiumEmoji}>{user.emoji}</Text>
+                  <Award size={20} color="#fca5a5" />
                 )}
               </View>
 
