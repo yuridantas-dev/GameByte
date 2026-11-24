@@ -17,67 +17,36 @@ import {
   Search,
   CheckCircle2,
   Clock,
-  Check,
-  BookOpen,
-  Calendar,
   Layers,
-  Sparkles,
 } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 import { avatars3DData } from "../data/mockData";
 
-type TurmaFilter = "all" | "ADS 1" | "ADS 2" | "ADS 3";
+type TurmaFilter = "all" | "ADS 1" | "ADS 2" | "ADS 3" | "ADS 4" | "ADS 5";
 
 interface TurmaInfo {
   id: TurmaFilter;
   label: string;
-  semester: string;
-  description: string;
 }
 
 const turmasList: TurmaInfo[] = [
-  {
-    id: "all",
-    label: "Todas as Turmas",
-    semester: "Geral",
-    description: "Visão consolidada de todos os semestres",
-  },
-  {
-    id: "ADS 1",
-    label: "ADS 1",
-    semester: "1º Semestre",
-    description: "Algoritmos e Lógica de Programação",
-  },
-  {
-    id: "ADS 2",
-    label: "ADS 2",
-    semester: "2º Semestre",
-    description: "Desenvolvimento Web e Banco de Dados",
-  },
-  {
-    id: "ADS 3",
-    label: "ADS 3",
-    semester: "3º Semestre",
-    description: "Programação com Python e Engenharia",
-  },
+  { id: "all", label: "Todas as Turmas" },
+  { id: "ADS 1", label: "ADS 1" },
+  { id: "ADS 2", label: "ADS 2" },
+  { id: "ADS 3", label: "ADS 3" },
+  { id: "ADS 4", label: "ADS 4" },
+  { id: "ADS 5", label: "ADS 5" },
 ];
 
 export function TelaPainelProfessor() {
-  const { classStudents, recordStudentActivity } = useApp();
+  const { classStudents } = useApp();
 
-  // Seleção de Turma (ADS 1, ADS 2, ADS 3 ou Todas)
+  // Seleção de Turma (ADS 1 a 5 ou Todas)
   const [selectedTurma, setSelectedTurma] = useState<TurmaFilter>("all");
 
   // Filtros de Frequência e Busca
   const [filterMode, setFilterMode] = useState<"all" | "infrequent" | "frequent">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [successToast, setSuccessToast] = useState<string | null>(null);
-
-  // Helper de Toast
-  const showToast = (msg: string) => {
-    setSuccessToast(msg);
-    setTimeout(() => setSuccessToast(null), 3000);
-  };
 
   // Alunos pertencentes à turma selecionada
   const studentsOfTurma = classStudents.filter((student) => {
@@ -125,14 +94,6 @@ export function TelaPainelProfessor() {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      {/* Toast Flutuante de Confirmação */}
-      {successToast && (
-        <View style={styles.toastContainer}>
-          <CheckCircle2 size={16} color="#4ade80" />
-          <Text style={styles.toastText}>{successToast}</Text>
-        </View>
-      )}
-
       {/* Header Limpo do Docente */}
       <LinearGradient
         colors={["#2b135e", "#1b0d3e", "#12082b"]}
@@ -147,7 +108,7 @@ export function TelaPainelProfessor() {
 
         <Text style={styles.headerTitle}>Gestão de Turmas & Frequência</Text>
         <Text style={styles.headerSubtitle}>
-          Análise e Desenvolvimento de Sistemas · Acompanhamento por Semestre
+          Análise e Desenvolvimento de Sistemas · Acompanhamento por Turma
         </Text>
 
         {/* Métricas Rápidas de Frequência da Turma Selecionada */}
@@ -193,14 +154,14 @@ export function TelaPainelProfessor() {
         </View>
       </LinearGradient>
 
-      {/* Seção 1: Seleção de Turma / Semestre */}
+      {/* Seção 1: Seleção de Turma (ADS 1 a 5) */}
       <View style={styles.turmaSection}>
         <View style={styles.sectionHeaderRow}>
-          <BookOpen size={16} color="#a78bfa" />
+          <Layers size={16} color="#a78bfa" />
           <Text style={styles.sectionTitle}>Selecione a Turma</Text>
         </View>
         <Text style={styles.sectionSubtitle}>
-          Filtre os alunos de acordo com o semestre letivo matriculado:
+          Escolha uma turma para visualizar os alunos matriculados e o status de frequência:
         </Text>
 
         <ScrollView
@@ -249,15 +210,6 @@ export function TelaPainelProfessor() {
                   )}
                 </View>
 
-                <Text
-                  style={[
-                    styles.turmaCardSemester,
-                    isSelected && styles.turmaCardSemesterSelected,
-                  ]}
-                >
-                  {turma.semester}
-                </Text>
-
                 <View style={styles.turmaCardFooter}>
                   <Users
                     size={11}
@@ -269,7 +221,7 @@ export function TelaPainelProfessor() {
                       isSelected && styles.turmaCardCountTextSelected,
                     ]}
                   >
-                    {turmaStudentCount} alunos
+                    {turmaStudentCount} {turmaStudentCount === 1 ? "aluno" : "alunos"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -285,10 +237,10 @@ export function TelaPainelProfessor() {
         </View>
         <View style={styles.turmaBannerMeta}>
           <Text style={styles.turmaBannerTitle}>
-            Turma Selecionada: {currentTurmaMeta.label} ({currentTurmaMeta.semester})
+            Turma: {currentTurmaMeta.label}
           </Text>
           <Text style={styles.turmaBannerDesc}>
-            {currentTurmaMeta.description} · {totalTurmaStudents} alunos matriculados
+            {totalTurmaStudents} {totalTurmaStudents === 1 ? "aluno matriculado" : "alunos matriculados"}
           </Text>
         </View>
       </View>
@@ -343,7 +295,7 @@ export function TelaPainelProfessor() {
                 filterMode === "infrequent" && styles.filterPillDangerTextActive,
               ]}
             >
-              Em Risco ({infrequentStudents.length})
+              Infrequentes ({infrequentStudents.length})
             </Text>
           </TouchableOpacity>
 
@@ -371,7 +323,7 @@ export function TelaPainelProfessor() {
         </View>
       </View>
 
-      {/* Seção 3: Lista de Alunos e Frequência */}
+      {/* Seção 3: Lista de Alunos e Visualização de Frequência */}
       <View style={styles.studentsListSection}>
         {filteredStudents.length === 0 ? (
           <View style={styles.emptyStateBox}>
@@ -414,11 +366,11 @@ export function TelaPainelProfessor() {
                     </View>
                     <Text style={styles.studentEmail}>{student.email}</Text>
 
-                    {/* Chips de Identificação do Aluno */}
+                    {/* Chips de Turma e Frequência */}
                     <View style={styles.studentChipsRow}>
                       <View style={styles.studentTurmaBadge}>
                         <Text style={styles.studentTurmaBadgeText}>
-                          {student.turma} · {student.semester}º Semestre
+                          {student.turma}
                         </Text>
                       </View>
 
@@ -431,9 +383,9 @@ export function TelaPainelProfessor() {
                         ]}
                       >
                         {isInfrequent ? (
-                          <AlertTriangle size={10} color="#f87171" />
+                          <AlertTriangle size={11} color="#f87171" />
                         ) : (
-                          <CheckCircle2 size={10} color="#4ade80" />
+                          <CheckCircle2 size={11} color="#4ade80" />
                         )}
                         <Text
                           style={[
@@ -443,11 +395,13 @@ export function TelaPainelProfessor() {
                               : styles.frequencyStatusBadgeTextSuccess,
                           ]}
                         >
-                          {student.lastActiveDaysAgo === 0
-                            ? "Ativo hoje"
+                          {isInfrequent
+                            ? `Infrequente (${student.lastActiveDaysAgo} dias sem acesso)`
+                            : student.lastActiveDaysAgo === 0
+                            ? "Frequente (Ativo hoje)"
                             : student.lastActiveDaysAgo === 1
-                            ? "Ativo ontem"
-                            : `Ativo há ${student.lastActiveDaysAgo} dias`}
+                            ? "Frequente (Ativo ontem)"
+                            : `Frequente (Ativo há ${student.lastActiveDaysAgo} dias)`}
                         </Text>
                       </View>
 
@@ -468,30 +422,6 @@ export function TelaPainelProfessor() {
                     </Text>
                   </View>
                 )}
-
-                {/* Linha de Ação do Professor: Registrar Presença / Suporte */}
-                <View style={styles.studentActionsRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.registerPresenceBtn,
-                      isInfrequent && styles.registerPresenceBtnHighlight,
-                    ]}
-                    onPress={() => {
-                      recordStudentActivity(student.id);
-                      showToast(
-                        `Presença e atendimento confirmados para ${student.name}.`
-                      );
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Check size={14} color="#ffffff" />
-                    <Text style={styles.registerPresenceBtnText}>
-                      {isInfrequent
-                        ? "Registrar Presença / Contato Pedagógico"
-                        : "Confirmar Presença em Aula"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
               </View>
             );
           })
@@ -512,35 +442,6 @@ const styles = StyleSheet.create({
     maxWidth: 900,
     width: "100%",
     alignSelf: "center",
-  },
-
-  // Toast
-  toastContainer: {
-    position: "absolute",
-    top: 14,
-    left: 20,
-    right: 20,
-    backgroundColor: "#1e133d",
-    borderWidth: 1,
-    borderColor: "#4ade80",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    zIndex: 999,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  toastText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#e2e8f0",
-    flex: 1,
   },
 
   // Header Hero
@@ -653,12 +554,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   turmaCard: {
-    width: 140,
+    minWidth: 120,
     backgroundColor: "#211440",
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.08)",
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   turmaCardSelected: {
     backgroundColor: "#311863",
@@ -673,9 +575,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
   },
   turmaCardLabel: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "800",
     color: "#e2e8f0",
   },
@@ -696,26 +599,17 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#ffffff",
   },
-  turmaCardSemester: {
-    fontSize: 10.5,
-    color: "#94a3b8",
-    marginTop: 2,
-    fontWeight: "600",
-  },
-  turmaCardSemesterSelected: {
-    color: "#c4b5fd",
-  },
   turmaCardFooter: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    marginTop: 10,
+    marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.05)",
   },
   turmaCardCountText: {
-    fontSize: 10,
+    fontSize: 10.5,
     color: "#94a3b8",
     fontWeight: "700",
   },
@@ -954,29 +848,6 @@ const styles = StyleSheet.create({
     color: "#cbd5e1",
     lineHeight: 15,
     fontStyle: "italic",
-  },
-  studentActionsRow: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.05)",
-  },
-  registerPresenceBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#4f46e5",
-    paddingVertical: 9,
-    borderRadius: 10,
-  },
-  registerPresenceBtnHighlight: {
-    backgroundColor: "#b91c1c",
-  },
-  registerPresenceBtnText: {
-    fontSize: 11.5,
-    fontWeight: "800",
-    color: "#ffffff",
   },
 
   // Empty State

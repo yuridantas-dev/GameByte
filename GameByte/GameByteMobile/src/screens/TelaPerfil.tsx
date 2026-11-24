@@ -124,7 +124,7 @@ export function TelaPerfil() {
 
           <View style={styles.teacherKpiItem}>
             <BookOpen size={16} color="#a78bfa" />
-            <Text style={styles.teacherKpiValue}>03</Text>
+            <Text style={styles.teacherKpiValue}>05</Text>
             <Text style={styles.teacherKpiLabel}>TURMAS (ADS)</Text>
           </View>
 
@@ -190,73 +190,49 @@ export function TelaPerfil() {
           </TouchableOpacity>
         </View>
 
-        {/* ==================== ABA 1: TURMAS & DISCIPLINAS ==================== */}
+        {/* ==================== ABA 1: TURMAS ==================== */}
         {activeTeacherTab === "turmas" && (
           <View style={styles.tabContentBox}>
             <Text style={styles.sectionHeaderTitle}>Turmas sob Responsabilidade (ADS)</Text>
             <Text style={styles.sectionHeaderDesc}>
-              Acompanhamento detalhado das turmas e matérias vinculadas à grade docente no semestre 2026.1:
+              Acompanhamento de turmas e alunos matriculados no semestre 2026.1:
             </Text>
 
-            <View style={styles.disciplineCard}>
-              <View style={styles.disciplineTopRow}>
-                <View style={styles.disciplineIconBox}>
-                  <BookOpen size={16} color="#a78bfa" />
-                </View>
-                <View style={styles.disciplineMeta}>
-                  <Text style={styles.disciplineName}>ADS 1 · 1º Semestre</Text>
-                  <Text style={styles.disciplineDetails}>Algoritmos e Lógica de Programação · Sala 204</Text>
-                </View>
-                <View style={styles.disciplineHoursBadge}>
-                  <Text style={styles.disciplineHoursText}>80h</Text>
-                </View>
-              </View>
-              <View style={styles.disciplineFooter}>
-                <Text style={styles.disciplineFooterText}>
-                  {classStudents.filter((s) => s.turma === "ADS 1").length} alunos matriculados
-                </Text>
-              </View>
-            </View>
+            {(["ADS 1", "ADS 2", "ADS 3", "ADS 4", "ADS 5"] as const).map((turmaName) => {
+              const turmaCount = classStudents.filter((s) => s.turma === turmaName).length;
+              const infrequentCount = classStudents.filter(
+                (s) => s.turma === turmaName && s.lastActiveDaysAgo > 7
+              ).length;
 
-            <View style={styles.disciplineCard}>
-              <View style={styles.disciplineTopRow}>
-                <View style={styles.disciplineIconBoxBlue}>
-                  <BookOpen size={16} color="#38bdf8" />
+              return (
+                <View key={turmaName} style={styles.disciplineCard}>
+                  <View style={styles.disciplineTopRow}>
+                    <View style={styles.disciplineIconBox}>
+                      <BookOpen size={16} color="#a78bfa" />
+                    </View>
+                    <View style={styles.disciplineMeta}>
+                      <Text style={styles.disciplineName}>{turmaName}</Text>
+                      <Text style={styles.disciplineDetails}>
+                        {turmaCount} {turmaCount === 1 ? "aluno matriculado" : "alunos matriculados"}
+                      </Text>
+                    </View>
+                    {infrequentCount > 0 ? (
+                      <View style={styles.disciplineHoursBadge}>
+                        <Text style={styles.dangerBoldText}>
+                          {infrequentCount} em risco
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={styles.disciplineHoursBadge}>
+                        <Text style={styles.disciplineHoursText}>
+                          100% frequente
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
-                <View style={styles.disciplineMeta}>
-                  <Text style={styles.disciplineName}>ADS 2 · 2º Semestre</Text>
-                  <Text style={styles.disciplineDetails}>Desenvolvimento Web e Banco de Dados · Lab 02</Text>
-                </View>
-                <View style={styles.disciplineHoursBadge}>
-                  <Text style={styles.disciplineHoursText}>80h</Text>
-                </View>
-              </View>
-              <View style={styles.disciplineFooter}>
-                <Text style={styles.disciplineFooterText}>
-                  {classStudents.filter((s) => s.turma === "ADS 2").length} alunos matriculados
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.disciplineCard}>
-              <View style={styles.disciplineTopRow}>
-                <View style={styles.disciplineIconBoxYellow}>
-                  <BookOpen size={16} color="#facc15" />
-                </View>
-                <View style={styles.disciplineMeta}>
-                  <Text style={styles.disciplineName}>ADS 3 · 3º Semestre</Text>
-                  <Text style={styles.disciplineDetails}>Programação com Python e Engenharia de Software · Sala 101</Text>
-                </View>
-                <View style={styles.disciplineHoursBadge}>
-                  <Text style={styles.disciplineHoursText}>80h</Text>
-                </View>
-              </View>
-              <View style={styles.disciplineFooter}>
-                <Text style={styles.disciplineFooterText}>
-                  {classStudents.filter((s) => s.turma === "ADS 3").length} alunos matriculados
-                </Text>
-              </View>
-            </View>
+              );
+            })}
           </View>
         )}
 
