@@ -1,13 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, Platform } from "react-native";
-import { Zap } from "lucide-react-native";
+import { Zap, GraduationCap } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 import { HeartDisplay } from "./HeartDisplay";
 
 const appIconImage = require("../../assets/logo_clean_transparent.png");
 
 export function Cabecalho() {
-  const { levelInfo, lives, setShowOutOfLivesModal, setCurrentTab } = useApp();
+  const { levelInfo, lives, setShowOutOfLivesModal, setCurrentTab, userRole, setUserRole } = useApp();
 
   return (
     <View style={styles.headerContainer}>
@@ -15,7 +15,7 @@ export function Cabecalho() {
       <TouchableOpacity 
         style={styles.logoRow} 
         activeOpacity={0.8}
-        onPress={() => setCurrentTab("home")}
+        onPress={() => setCurrentTab(userRole === "teacher" ? "teacher" : "home")}
       >
         <View style={styles.logoIconBox}>
           <Image source={appIconImage} style={styles.logoIcon} resizeMode="cover" />
@@ -23,57 +23,93 @@ export function Cabecalho() {
         <Text style={styles.logoText}>GameByte</Text>
       </TouchableOpacity>
 
-      {/* Right: Lives Hearts, XP Badge with Level Bar & 3D Avatar */}
-      <View style={styles.actionsRow}>
-        {/* Lives Hearts Pill */}
-        <TouchableOpacity
-          style={[styles.livesPill, lives <= 0 && styles.livesPillDead]}
-          activeOpacity={0.8}
-          onPress={() => {
-            if (lives <= 0) setShowOutOfLivesModal(true);
-            else setCurrentTab("profile");
-          }}
-        >
-          <HeartDisplay lives={lives} size={13} />
-        </TouchableOpacity>
+      {/* Right: Actions depend on User Role */}
+      {userRole === "teacher" ? (
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={styles.teacherHeaderBadge}
+            onPress={() => setCurrentTab("teacher")}
+            activeOpacity={0.8}
+          >
+            <GraduationCap size={13} color="#facc15" />
+            <Text style={styles.teacherHeaderBadgeText}>Prof. Rodrigo</Text>
+          </TouchableOpacity>
 
-        {/* XP Pill with Level & Progress Bar */}
-        <TouchableOpacity
-          style={styles.xpPill}
-          activeOpacity={0.8}
-          onPress={() => setCurrentTab("profile")}
-        >
-          <View style={styles.xpTopRow}>
-            <View style={styles.levelTag}>
-              <Text style={styles.levelTagText}>Nv. {levelInfo.level}</Text>
+          <TouchableOpacity
+            style={styles.roleTogglePill}
+            onPress={() => {
+              setUserRole("student");
+              setCurrentTab("home");
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.roleTogglePillText}>Ver Aluno</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.actionsRow}>
+          {/* Lives Hearts Pill */}
+          <TouchableOpacity
+            style={[styles.livesPill, lives <= 0 && styles.livesPillDead]}
+            activeOpacity={0.8}
+            onPress={() => {
+              if (lives <= 0) setShowOutOfLivesModal(true);
+              else setCurrentTab("profile");
+            }}
+          >
+            <HeartDisplay lives={lives} size={13} />
+          </TouchableOpacity>
+
+          {/* XP Pill with Level & Progress Bar */}
+          <TouchableOpacity
+            style={styles.xpPill}
+            activeOpacity={0.8}
+            onPress={() => setCurrentTab("profile")}
+          >
+            <View style={styles.xpTopRow}>
+              <View style={styles.levelTag}>
+                <Text style={styles.levelTagText}>Nv. {levelInfo.level}</Text>
+              </View>
+              <View style={styles.xpValueRow}>
+                <Zap size={10} color="#f8c662" fill="#f8c662" />
+                <Text style={styles.xpText}>
+                  {levelInfo.totalXp.toLocaleString("pt-BR")}/{levelInfo.levelMaxXp.toLocaleString("pt-BR")}
+                </Text>
+              </View>
             </View>
-            <View style={styles.xpValueRow}>
-              <Zap size={10} color="#f8c662" fill="#f8c662" />
-              <Text style={styles.xpText}>
-                {levelInfo.totalXp.toLocaleString("pt-BR")}/{levelInfo.levelMaxXp.toLocaleString("pt-BR")}
-              </Text>
+
+            {/* Micro Progress Bar */}
+            <View style={styles.xpBarTrack}>
+              <View style={[styles.xpBarFill, { width: `${levelInfo.progressPercent}%` }]} />
             </View>
-          </View>
+          </TouchableOpacity>
 
-          {/* Micro Progress Bar */}
-          <View style={styles.xpBarTrack}>
-            <View style={[styles.xpBarFill, { width: `${levelInfo.progressPercent}%` }]} />
-          </View>
-        </TouchableOpacity>
+          {/* 3D Avatar */}
+          <TouchableOpacity
+            style={[styles.avatarButton, { borderColor: levelInfo.currentAvatar.accentColor }]}
+            onPress={() => setCurrentTab("profile")}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={levelInfo.currentAvatar.image}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
 
-        {/* 3D Avatar */}
-        <TouchableOpacity
-          style={[styles.avatarButton, { borderColor: levelInfo.currentAvatar.accentColor }]}
-          onPress={() => setCurrentTab("profile")}
-          activeOpacity={0.8}
-        >
-          <Image
-            source={levelInfo.currentAvatar.image}
-            style={styles.avatarImage}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
-      </View>
+          {/* Quick Role Switcher Button to Teacher */}
+          <TouchableOpacity
+            style={styles.roleToggleIconBtn}
+            onPress={() => {
+              setUserRole("teacher");
+              setCurrentTab("teacher");
+            }}
+            activeOpacity={0.7}
+          >
+            <GraduationCap size={14} color="#facc15" />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -223,5 +259,42 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: "100%",
     height: "100%",
+  },
+  teacherHeaderBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(250, 204, 21, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(250, 204, 21, 0.3)",
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  teacherHeaderBadgeText: {
+    fontSize: 10.5,
+    fontWeight: "800",
+    color: "#facc15",
+  },
+  roleTogglePill: {
+    backgroundColor: "#6b4ee8",
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+  roleTogglePillText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+  roleToggleIconBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "rgba(250, 204, 21, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(250, 204, 21, 0.25)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

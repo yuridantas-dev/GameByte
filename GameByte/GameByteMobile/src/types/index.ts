@@ -88,3 +88,33 @@ export interface LevelInfo {
   unlockedAvatars: Avatar3D[];
   allAvatars: Avatar3D[];
 }
+
+export type UserRole = "student" | "teacher";
+
+export interface ClassStudent {
+  id: string;
+  name: string;
+  email: string;
+  xp: number;
+  level: number;
+  streak: number;
+  tracksCompleted: number;
+  avatarId: number;
+  lastActiveDaysAgo: number;
+  lastActiveDate: string;
+  riskOfDropout: boolean;
+  notes?: string;
+}
+
+export interface CreatedQuestion {
+  id: string;
+  trackId: string;
+  trackName: string;
+  stageId: number;
+  question: string;
+  options: string[];
+  correct: string;
+  explanation: string;
+  xp: number;
+  createdAt: string;
+}

@@ -23,13 +23,23 @@ const mascotImage = require("../../assets/mascote_transparent.png");
 const appIconImage = require("../../assets/logo_clean_transparent.png");
 
 export function TelaLogin() {
-  const { login } = useApp();
+  const { login, setUserRole, setCurrentTab } = useApp();
 
   // Hooks avaliados na rubrica do professor (Critério 5: nomes significativos)
+  const [selectedRole, setSelectedRole] = useState<"student" | "teacher">("student");
   const [email, setEmail] = useState("marcos.cortes@portalcci.com.br");
   const [senha, setSenha] = useState("123456");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const handleSelectRole = (role: "student" | "teacher") => {
+    setSelectedRole(role);
+    if (role === "teacher") {
+      setEmail("professor@faculdadecci.com.br");
+    } else {
+      setEmail("marcos.cortes@portalcci.com.br");
+    }
+  };
 
   // Validação de formulário profissional (Diferencial da Rubrica)
   const handleLogin = () => {
@@ -48,11 +58,23 @@ export function TelaLogin() {
 
     setErrorMessage(null);
     setLoading(true);
+    setUserRole(selectedRole);
+    if (selectedRole === "teacher") {
+      setCurrentTab("teacher");
+    } else {
+      setCurrentTab("home");
+    }
     login();
   };
 
   const handleGoogleLogin = () => {
     setLoading(true);
+    setUserRole(selectedRole);
+    if (selectedRole === "teacher") {
+      setCurrentTab("teacher");
+    } else {
+      setCurrentTab("home");
+    }
     login();
   };
 
@@ -122,6 +144,46 @@ export function TelaLogin() {
             <Text style={styles.formSubtitle}>
               Digite suas credenciais institucionais para carregar suas trilhas e vidas.
             </Text>
+
+            {/* Perfil de Acesso: Aluno vs Professor (Seção 1.2 e 3.1 da Monografia) */}
+            <View style={styles.roleSelectorBox}>
+              <Text style={styles.roleSelectorLabel}>Perfil de Acesso:</Text>
+              <View style={styles.roleButtonsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.roleChoiceBtn,
+                    selectedRole === "student" && styles.roleChoiceBtnActive,
+                  ]}
+                  onPress={() => handleSelectRole("student")}
+                >
+                  <Text
+                    style={[
+                      styles.roleChoiceBtnText,
+                      selectedRole === "student" && styles.roleChoiceBtnTextActive,
+                    ]}
+                  >
+                    🎓 Aluno (Estudante)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.roleChoiceBtn,
+                    selectedRole === "teacher" && styles.roleChoiceBtnTeacherActive,
+                  ]}
+                  onPress={() => handleSelectRole("teacher")}
+                >
+                  <Text
+                    style={[
+                      styles.roleChoiceBtnText,
+                      selectedRole === "teacher" && styles.roleChoiceBtnTextActive,
+                    ]}
+                  >
+                    👨‍🏫 Professor (Docente)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
             {/* Form Inputs (Componentizados e Validados - Critérios 1, 4 e 5) */}
             <InputCustom
@@ -438,5 +500,47 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#bbaaff",
     textDecorationLine: "underline",
+  },
+  roleSelectorBox: {
+    marginBottom: 14,
+  },
+  roleSelectorLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#c4b5fd",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  roleButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  roleChoiceBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+  },
+  roleChoiceBtnActive: {
+    backgroundColor: "#6b4ee8",
+    borderColor: "#8b5cf6",
+  },
+  roleChoiceBtnTeacherActive: {
+    backgroundColor: "#d97706",
+    borderColor: "#f59e0b",
+  },
+  roleChoiceBtnText: {
+    fontSize: 10.5,
+    fontWeight: "700",
+    color: "#9487b0",
+  },
+  roleChoiceBtnTextActive: {
+    color: "#ffffff",
+    fontWeight: "800",
   },
 });

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState } from "react";
-import { Track, LevelInfo } from "../types";
-import { getLevelInfo } from "../data/mockData";
+import { Track, LevelInfo, UserRole, ClassStudent, CreatedQuestion } from "../types";
+import { getLevelInfo, initialClassStudents, initialCreatedQuestions } from "../data/mockData";
 
-export type ScreenTab = "home" | "tracks" | "ranking" | "profile";
+export type ScreenTab = "home" | "tracks" | "ranking" | "profile" | "teacher";
 
 interface AppContextType {
   isLoggedIn: boolean;
@@ -12,6 +12,8 @@ interface AppContextType {
   setAppLoading: (loading: boolean, message?: string) => void;
   login: () => void;
   logout: () => void;
+  userRole: UserRole;
+  setUserRole: (role: UserRole) => void;
   currentTab: ScreenTab;
   setCurrentTab: (tab: ScreenTab) => void;
   selectedTrackId: string | null;
@@ -33,6 +35,12 @@ interface AppContextType {
   getTrackProgress: (trackId: string) => number;
   isTrackCompleted: (trackId: string) => boolean;
   isTrackUnlocked: (track: Track) => boolean;
+  classStudents: ClassStudent[];
+  recordStudentActivity: (studentId: string) => void;
+  resetStudentXp: (studentId: string, newXp: number) => void;
+  createdQuestions: CreatedQuestion[];
+  addCustomQuestion: (question: Omit<CreatedQuestion, "id" | "createdAt">) => void;
+  deleteCustomQuestion: (questionId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,6 +50,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState("Iniciando o GameByte...");
   const [currentTab, setCurrentTab] = useState<ScreenTab>("home");
+  const [userRole, setUserRole] = useState<UserRole>("student");
+  const [classStudents, setClassStudents] = useState<ClassStudent[]>(initialClassStudents);
+  const [createdQuestions, setCreatedQuestions] = useState<CreatedQuestion[]>(initialCreatedQuestions);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [totalXp, setTotalXp] = useState(1500); // Começa com 1.500 XP (exemplo do usuário!)
   const [selectedAvatarId, setSelectedAvatarId] = useState<number | null>(null);
@@ -135,6 +146,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return track.prerequisites.every((prereqId) => isTrackCompleted(prereqId));
   };
 
+  // Funções do Painel do Professor (História de Usuário & Avaliação de Software)
+  const recordStudentActivity = (studentId: string) => {
+    setClassStudents((prev) =>
+      prev.map((s) => {
+        if (s.id === studentId) {
+          const nowTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          return {
+            ...s,
+            lastActiveDaysAgo: 0,
+            lastActiveDate: `Hoje às ${nowTime}`,
+            riskOfDropout: false,
+            streak: s.streak === 0 ? 1 : s.streak + 1,
+          };
+        }
+        return s;
+      })
+    );
+  };
+
+  const resetStudentXp = (studentId: string, newXp: number) => {
+    setClassStudents((prev) =>
+      prev.map((s) => {
+        if (s.id === studentId) {
+          return {
+            ...s,
+            xp: newXp,
+            level: Math.max(1, Math.floor(newXp / 2000) + 1),
+          };
+        }
+        return s;
+      })
+    );
+  };
+
+  const addCustomQuestion = (newQ: Omit<CreatedQuestion, "id" | "createdAt">) => {
+    const questionObj: CreatedQuestion = {
+      ...newQ,
+      id: `q-prof-${Date.now()}`,
+      createdAt: new Date().toLocaleDateString("pt-BR"),
+    };
+    setCreatedQuestions((prev) => [questionObj, ...prev]);
+  };
+
+  const deleteCustomQuestion = (questionId: string) => {
+    setCreatedQuestions((prev) => prev.filter((q) => q.id !== questionId));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -145,6 +203,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setAppLoading,
         login,
         logout,
+        userRole,
+        setUserRole,
         currentTab,
         setCurrentTab,
         selectedTrackId,
@@ -166,6 +226,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         getTrackProgress,
         isTrackCompleted,
         isTrackUnlocked,
+        classStudents,
+        recordStudentActivity,
+        resetStudentXp,
+        createdQuestions,
+        addCustomQuestion,
+        deleteCustomQuestion,
       }}
     >
       {children}

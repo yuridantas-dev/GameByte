@@ -25,6 +25,7 @@ import {
   Heart,
   Clock,
   RotateCcw,
+  GraduationCap,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useApp } from "../context/AppContext";
@@ -42,6 +43,9 @@ export function TelaPerfil() {
     rechargeLives,
     loseLife,
     logout,
+    userRole,
+    setUserRole,
+    setCurrentTab,
   } = useApp();
 
   const [activeProfileTab, setActiveProfileTab] = useState<"avatars" | "badges" | "lives">("avatars");
@@ -489,6 +493,22 @@ export function TelaPerfil() {
           </View>
         </View>
       )}
+
+      {/* Acesso ao Painel do Docente / Modo Professor (Seção 1.2 e 3.1) */}
+      <ButtonCustom
+        title={
+          userRole === "teacher"
+            ? "Acessar Painel do Docente (Minha Turma)"
+            : "Alternar para Modo Professor / Admin"
+        }
+        variant="secondary"
+        onPress={() => {
+          if (userRole !== "teacher") setUserRole("teacher");
+          setCurrentTab("teacher");
+        }}
+        icon={<GraduationCap size={16} color="#facc15" />}
+        style={styles.teacherAdminBtn}
+      />
 
       {/* Logout Action using ButtonCustom (Critério 4: Componentização) */}
       <ButtonCustom
@@ -1344,6 +1364,10 @@ const styles = StyleSheet.create({
   },
   modalEquipBtnCustom: {
     marginTop: 18,
+    width: "100%",
+  },
+  teacherAdminBtn: {
+    marginTop: 26,
     width: "100%",
   },
 });

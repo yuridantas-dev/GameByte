@@ -10,6 +10,7 @@ import { TelaTrilhas } from "./src/screens/TelaTrilhas";
 import { TelaRanking } from "./src/screens/TelaRanking";
 import { TelaPerfil } from "./src/screens/TelaPerfil";
 import { TelaCarregamento } from "./src/screens/TelaCarregamento";
+import { TelaPainelProfessor } from "./src/screens/TelaPainelProfessor";
 import { OutOfLivesModal } from "./src/components/OutOfLivesModal";
 
 function MainApp() {
@@ -37,6 +38,8 @@ function MainApp() {
         return <TelaRanking />;
       case "profile":
         return <TelaPerfil />;
+      case "teacher":
+        return <TelaPainelProfessor />;
       default:
         return <TelaInicio />;
     }

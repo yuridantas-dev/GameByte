@@ -1,21 +1,26 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { Home, LayoutGrid, Trophy, User } from "lucide-react-native";
+import { Home, LayoutGrid, Trophy, User, GraduationCap } from "lucide-react-native";
 import { useApp, ScreenTab } from "../context/AppContext";
 
 export function MenuNavegacao() {
-  const { currentTab, setCurrentTab } = useApp();
+  const { currentTab, setCurrentTab, userRole, classStudents } = useApp();
 
-  const navItems: { tab: ScreenTab; label: string; icon: any }[] = [
+  const riskCount = classStudents.filter((s) => s.lastActiveDaysAgo > 7).length;
+
+  const navItems: { tab: ScreenTab; label: string; icon: any; badge?: number }[] = [
     { tab: "home", label: "Início", icon: Home },
     { tab: "tracks", label: "Trilhas", icon: LayoutGrid },
+    ...(userRole === "teacher"
+      ? [{ tab: "teacher" as ScreenTab, label: "Docente", icon: GraduationCap, badge: riskCount }]
+      : []),
     { tab: "ranking", label: "Ranking", icon: Trophy },
     { tab: "profile", label: "Perfil", icon: User },
   ];
 
   return (
     <View style={styles.navContainer}>
-      {navItems.map(({ tab, label, icon: Icon }) => {
+      {navItems.map(({ tab, label, icon: Icon, badge }) => {
         const isActive = currentTab === tab;
         return (
           <TouchableOpacity
@@ -30,6 +35,11 @@ export function MenuNavegacao() {
                 color={isActive ? "#ffffff" : "#9184aa"}
                 strokeWidth={isActive ? 2.5 : 2}
               />
+              {badge !== undefined && badge > 0 && (
+                <View style={styles.riskBadgeDot}>
+                  <Text style={styles.riskBadgeDotText}>{badge}</Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
               {label}
@@ -81,5 +91,24 @@ const styles = StyleSheet.create({
   },
   navLabelActive: {
     color: "#b9a7ff",
+  },
+  riskBadgeDot: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: "#180d33",
+  },
+  riskBadgeDotText: {
+    fontSize: 8.5,
+    fontWeight: "900",
+    color: "#ffffff",
   },
 });
