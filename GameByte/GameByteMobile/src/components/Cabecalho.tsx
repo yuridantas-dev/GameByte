@@ -11,7 +11,7 @@ export function Cabecalho() {
 
   return (
     <View style={styles.headerContainer}>
-      {/* Left: Logo */}
+      {/* Left: Logo (Apenas a logo do app GameByte) */}
       <TouchableOpacity 
         style={styles.logoRow} 
         activeOpacity={0.8}
@@ -20,7 +20,6 @@ export function Cabecalho() {
         <View style={styles.logoIconBox}>
           <Image source={appIconImage} style={styles.logoIcon} resizeMode="cover" />
         </View>
-        <Text style={styles.logoText}>GameByte</Text>
       </TouchableOpacity>
 
       {/* Right: Actions depend on User Role */}

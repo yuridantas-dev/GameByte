@@ -56,7 +56,7 @@ export function TelaPerfil() {
     createdQuestions,
   } = useApp();
 
-  const [activeProfileTab, setActiveProfileTab] = useState<"avatars" | "badges" | "lives">("avatars");
+  const [activeProfileTab, setActiveProfileTab] = useState<"avatars" | "badges" | "lives">("lives");
   const [activeTeacherTab, setActiveTeacherTab] = useState<"turmas" | "institucional">("turmas");
   const [inspectAvatar, setInspectAvatar] = useState<Avatar3D | null>(null);
 
@@ -332,14 +332,12 @@ export function TelaPerfil() {
       {/* 1. Main Profile Card with 3D Avatar */}
       <View style={styles.profileCard}>
         <View style={styles.profileHeaderRow}>
-          {/* Large 3D Avatar Display with touch to inspect */}
-          <TouchableOpacity
+          {/* Avatar Display */}
+          <View
             style={[
               styles.avatar3DBox,
               { borderColor: levelInfo.currentAvatar.accentColor },
             ]}
-            activeOpacity={0.85}
-            onPress={() => setInspectAvatar(levelInfo.currentAvatar)}
           >
             <Image
               source={levelInfo.currentAvatar.image}
@@ -354,36 +352,32 @@ export function TelaPerfil() {
             >
               <Text style={styles.avatarLevelBadgeText}>NV. {levelInfo.level}</Text>
             </View>
-            <View style={styles.inspectHintBadge}>
-              <Eye size={12} color="#ffffff" />
-            </View>
-          </TouchableOpacity>
+          </View>
 
           <View style={styles.profileMeta}>
             <View style={styles.nameRow}>
               <Text style={styles.userName}>Marina Silva</Text>
               <Sparkles size={16} color="#f8c662" />
             </View>
-            <Text style={styles.avatarTitleText}>{levelInfo.currentAvatar.title}</Text>
-            <Text style={styles.userRole}>
-              Avatar 3D: <Text style={styles.avatarNameBold}>{levelInfo.currentAvatar.name}</Text>
+            <Text style={styles.studentCourseText}>
+              Análise e Desenvolvimento de Sistemas
+            </Text>
+            <Text style={styles.studentEmailText}>
+              marina.silva@faculdadecci.com.br
             </Text>
 
             <View style={styles.profileMetaActions}>
-              <TouchableOpacity
-                style={styles.viewAvatarPill}
-                activeOpacity={0.7}
-                onPress={() => setInspectAvatar(levelInfo.currentAvatar)}
-              >
-                <Eye size={12} color="#f8c662" />
-                <Text style={styles.viewAvatarPillText}>Inspecionar 3D</Text>
-              </TouchableOpacity>
-
               {/* Quick Heart Pill */}
-              <View style={styles.livesMiniPill}>
+              <TouchableOpacity
+                style={styles.livesMiniPill}
+                onPress={() => setActiveProfileTab("lives")}
+                activeOpacity={0.7}
+              >
                 <Heart size={11} color="#ef4444" fill="#ef4444" />
-                <Text style={styles.livesMiniText}>{lives.toFixed(1).replace(".0", "")} / {maxLives}</Text>
-              </View>
+                <Text style={styles.livesMiniText}>
+                  {lives.toFixed(1).replace(".0", "")} / {maxLives} Vidas
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -454,22 +448,23 @@ export function TelaPerfil() {
         <TouchableOpacity
           style={[
             styles.tabSelectorBtn,
-            activeProfileTab === "avatars" && styles.tabSelectorBtnActive,
+            activeProfileTab === "lives" && styles.tabSelectorBtnActive,
           ]}
-          onPress={() => setActiveProfileTab("avatars")}
+          onPress={() => setActiveProfileTab("lives")}
           activeOpacity={0.7}
         >
-          <Sparkles
+          <Heart
             size={13}
-            color={activeProfileTab === "avatars" ? "#ffffff" : "#a69abf"}
+            color={activeProfileTab === "lives" ? "#ef4444" : "#a69abf"}
+            fill={activeProfileTab === "lives" ? "#ef4444" : "transparent"}
           />
           <Text
             style={[
               styles.tabSelectorText,
-              activeProfileTab === "avatars" && styles.tabSelectorTextActive,
+              activeProfileTab === "lives" && styles.tabSelectorTextActive,
             ]}
           >
-            Avatares 3D
+            Vidas & Status
           </Text>
         </TouchableOpacity>
 
@@ -498,23 +493,22 @@ export function TelaPerfil() {
         <TouchableOpacity
           style={[
             styles.tabSelectorBtn,
-            activeProfileTab === "lives" && styles.tabSelectorBtnActive,
+            activeProfileTab === "avatars" && styles.tabSelectorBtnActive,
           ]}
-          onPress={() => setActiveProfileTab("lives")}
+          onPress={() => setActiveProfileTab("avatars")}
           activeOpacity={0.7}
         >
-          <Heart
+          <Sparkles
             size={13}
-            color={activeProfileTab === "lives" ? "#ef4444" : "#a69abf"}
-            fill={activeProfileTab === "lives" ? "#ef4444" : "transparent"}
+            color={activeProfileTab === "avatars" ? "#ffffff" : "#a69abf"}
           />
           <Text
             style={[
               styles.tabSelectorText,
-              activeProfileTab === "lives" && styles.tabSelectorTextActive,
+              activeProfileTab === "avatars" && styles.tabSelectorTextActive,
             ]}
           >
-            Vidas & Status
+            Avatares 3D
           </Text>
         </TouchableOpacity>
       </View>
@@ -951,6 +945,18 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#ffffff",
     letterSpacing: -0.4,
+  },
+  studentCourseText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#c4b5fd",
+    marginTop: 2,
+  },
+  studentEmailText: {
+    fontSize: 11,
+    color: "#94a3b8",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    marginTop: 2,
   },
   avatarTitleText: {
     fontSize: 12,
