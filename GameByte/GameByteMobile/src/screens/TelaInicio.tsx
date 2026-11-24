@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Flame, Zap, Trophy, Play, Award, Sparkles, Compass } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
+import { ButtonCustom } from "../components/ButtonCustom";
 
 const { width: screenWidth } = Dimensions.get("window");
 const isSmallDevice = screenWidth < 375;
@@ -153,14 +154,12 @@ export function TelaInicio() {
             Conclua as matérias fundamentais para desbloquear especializações em Cibersegurança, Full Stack, Cloud e Inteligência Artificial no GameByte.
           </Text>
 
-          <TouchableOpacity
-            style={styles.challengeButton}
+          <ButtonCustom
+            title="Explorar Trilhas"
             onPress={handleStartTracks}
-            activeOpacity={0.85}
-          >
-            <Compass size={14} color="#200e54" />
-            <Text style={styles.challengeButtonText}>Explorar Trilhas</Text>
-          </TouchableOpacity>
+            icon={<Compass size={15} color="#ffffff" />}
+            style={styles.challengeButtonCustom}
+          />
         </LinearGradient>
 
         {/* Next Achievement Card */}
@@ -423,20 +422,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 14,
   },
-  challengeButton: {
-    flexDirection: "row",
-    alignItems: "center",
+  challengeButtonCustom: {
     alignSelf: "flex-start",
-    gap: 6,
-    backgroundColor: "#ffbf66",
-    borderRadius: 14,
-    paddingVertical: 9,
-    paddingHorizontal: 16,
-  },
-  challengeButtonText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#200e54",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
 
   // Achievement Card

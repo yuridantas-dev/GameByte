@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     paddingTop: 8,
-    paddingBottom: Platform.OS === "ios" ? 24 : 10,
+    paddingBottom: Platform.OS === "ios" ? 24 : 18,
     zIndex: 20,
   },
   navItem: {

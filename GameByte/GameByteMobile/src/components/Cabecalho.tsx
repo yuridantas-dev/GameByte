@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, Platform } from "react-native";
-import { Zap, Bell } from "lucide-react-native";
+import { Zap } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 import { HeartDisplay } from "./HeartDisplay";
 
@@ -8,7 +8,6 @@ const appIconImage = require("../../assets/logo_clean_transparent.png");
 
 export function Cabecalho() {
   const { totalXp, levelInfo, lives, setShowOutOfLivesModal, setCurrentTab } = useApp();
-  const [hasNotice, setHasNotice] = useState(true);
 
   return (
     <View style={styles.headerContainer}>

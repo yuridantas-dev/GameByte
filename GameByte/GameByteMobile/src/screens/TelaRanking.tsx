@@ -15,6 +15,7 @@ import { Crown, Flame, Users, ChevronRight, X, Sparkles, ShieldCheck } from "luc
 import { leaderboardData, avatars3DData } from "../data/mockData";
 import { Avatar3D } from "../types";
 import { useApp } from "../context/AppContext";
+import { ButtonCustom } from "../components/ButtonCustom";
 
 const { width: screenWidth } = Dimensions.get("window");
 const isSmallDevice = screenWidth < 375;
@@ -73,7 +74,7 @@ export function TelaRanking() {
       {/* Header */}
       <View style={styles.headerBlock}>
         <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
+          <View style={styles.headerTitleBox}>
             <Text style={styles.headerTagline}>CLASSIFICAÇÃO GAMIFICADA</Text>
             <Text style={styles.headerTitle}>Ranking da galera.</Text>
             <Text style={styles.headerSubtitle}>
@@ -276,7 +277,7 @@ export function TelaRanking() {
             </TouchableOpacity>
 
             {inspectAvatar && (
-              <View style={{ alignItems: "center" }}>
+              <View style={styles.modalBodyCentered}>
                 {/* 3D Avatar Image Big Render */}
                 <View
                   style={[
@@ -318,13 +319,12 @@ export function TelaRanking() {
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.modalDismissButton}
+                <ButtonCustom
+                  title="Fechar Detalhes"
+                  variant="secondary"
                   onPress={() => setInspectAvatar(null)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.modalDismissButtonText}>Fechar Detalhes</Text>
-                </TouchableOpacity>
+                  style={styles.modalDismissCustom}
+                />
               </View>
             )}
           </View>
@@ -798,17 +798,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#4ade80",
   },
-  modalDismissButton: {
-    width: "100%",
-    backgroundColor: "#6b4ee8",
-    paddingVertical: 12,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 18,
+  headerTitleBox: {
+    flex: 1,
   },
-  modalDismissButtonText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#ffffff",
+  modalBodyCentered: {
+    alignItems: "center",
+    width: "100%",
+  },
+  modalDismissCustom: {
+    width: "100%",
+    marginTop: 18,
   },
 });

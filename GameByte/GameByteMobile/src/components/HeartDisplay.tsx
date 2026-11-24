@@ -25,18 +25,9 @@ export function HeartDisplay({
     } else if (lives >= halfThreshold) {
       // Meio Coração (Corte visual de 50%)
       return (
-        <View key={index} style={{ width: size, height: size, position: "relative" }}>
+        <View key={index} style={[styles.heartRelativeBox, { width: size, height: size }]}>
           <Heart size={size} color="#64748b" fill="rgba(255,255,255,0.08)" />
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: size / 2,
-              height: size,
-              overflow: "hidden",
-            }}
-          >
+          <View style={[styles.halfHeartClip, { width: size / 2, height: size }]}>
             <Heart size={size} color="#ef4444" fill="#ef4444" />
           </View>
         </View>
@@ -84,5 +75,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#fca5a5",
     fontFamily: "monospace",
+  },
+  heartRelativeBox: {
+    position: "relative",
+  },
+  halfHeartClip: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    overflow: "hidden",
   },
 });

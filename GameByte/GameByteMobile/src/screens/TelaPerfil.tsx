@@ -32,6 +32,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useApp } from "../context/AppContext";
 import { Avatar3D } from "../types";
 import { HeartDisplay } from "../components/HeartDisplay";
+import { ButtonCustom } from "../components/ButtonCustom";
 
 export function TelaPerfil() {
   const {
@@ -93,7 +94,7 @@ export function TelaPerfil() {
             </View>
             <Text style={styles.avatarTitleText}>{levelInfo.currentAvatar.title}</Text>
             <Text style={styles.userRole}>
-              Avatar 3D: <Text style={{ color: "#ffffff", fontWeight: "700" }}>{levelInfo.currentAvatar.name}</Text>
+              Avatar 3D: <Text style={styles.avatarNameBold}>{levelInfo.currentAvatar.name}</Text>
             </Text>
 
             <View style={styles.profileMetaActions}>
@@ -355,7 +356,7 @@ export function TelaPerfil() {
               <View style={[styles.badgeIcon, { backgroundColor: "#4c2882" }]}>
                 <Award size={20} color="#c4b2ff" />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexItem}>
                 <Text style={styles.badgeName}>Primeiro Desafio</Text>
                 <Text style={styles.badgeDesc}>Concluiu a primeira fase de Lógica de Programação</Text>
               </View>
@@ -366,7 +367,7 @@ export function TelaPerfil() {
               <View style={[styles.badgeIcon, { backgroundColor: "#3a4a28" }]}>
                 <Flame size={20} color="#a3e635" />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexItem}>
                 <Text style={styles.badgeName}>Fogo nos Estudos</Text>
                 <Text style={styles.badgeDesc}>12 dias consecutivos de login e exercícios</Text>
               </View>
@@ -377,7 +378,7 @@ export function TelaPerfil() {
               <View style={[styles.badgeIcon, { backgroundColor: "#2e3b5e" }]}>
                 <Zap size={20} color="#60a5fa" />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexItem}>
                 <Text style={styles.badgeName}>Caçador de Bugs</Text>
                 <Text style={styles.badgeDesc}>Encontrou o erro no terminal na primeira tentativa</Text>
               </View>
@@ -388,7 +389,7 @@ export function TelaPerfil() {
               <View style={[styles.badgeIcon, { backgroundColor: "#52243d" }]}>
                 <Heart size={20} color="#f43f5e" fill="#f43f5e" />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexItem}>
                 <Text style={styles.badgeName}>Sobrevivente Focado</Text>
                 <Text style={styles.badgeDesc}>Completou uma trilha com os 3 corações intactos</Text>
               </View>
@@ -399,7 +400,7 @@ export function TelaPerfil() {
               <View style={[styles.badgeIcon, { backgroundColor: "#4c3a1e" }]}>
                 <Trophy size={20} color="#fbbf24" />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexItem}>
                 <Text style={styles.badgeName}>Mestre de Nível</Text>
                 <Text style={styles.badgeDesc}>Alcançou o nível 3 acumulando mais de 4.000 XP</Text>
               </View>
@@ -443,10 +444,10 @@ export function TelaPerfil() {
             {/* Recharge Timer Box */}
             <View style={styles.rechargeBox}>
               <Clock size={16} color="#fca5a5" />
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexItem}>
                 <Text style={styles.rechargeBoxTitle}>Recarga de Vidas Automática</Text>
                 <Text style={styles.rechargeBoxDesc}>
-                  Tempo estimado para restauração completa: <Text style={{ color: "#ffffff", fontWeight: "800" }}>{rechargeHoursRemaining}</Text>
+                  Tempo estimado para restauração completa: <Text style={styles.whiteBoldText}>{rechargeHoursRemaining}</Text>
                 </Text>
               </View>
             </View>
@@ -456,13 +457,13 @@ export function TelaPerfil() {
               <View style={styles.livesRuleItem}>
                 <Text style={styles.livesRuleDot}>•</Text>
                 <Text style={styles.livesRuleText}>
-                  Cada usuário inicia com <Text style={{ color: "#ffffff", fontWeight: "700" }}>3 corações cheios</Text>.
+                  Cada usuário inicia com <Text style={styles.whiteBoldText}>3 corações cheios</Text>.
                 </Text>
               </View>
               <View style={styles.livesRuleItem}>
                 <Text style={styles.livesRuleDot}>•</Text>
                 <Text style={styles.livesRuleText}>
-                  Erros em mini-games (ordenação, caça ao bug ou quiz) consomem <Text style={{ color: "#fca5a5", fontWeight: "700" }}>meio coração (-0.5 vida)</Text>.
+                  Erros em mini-games (ordenação, caça ao bug ou quiz) consomem <Text style={styles.dangerBoldText}>meio coração (-0.5 vida)</Text>.
                 </Text>
               </View>
               <View style={styles.livesRuleItem}>
@@ -473,38 +474,34 @@ export function TelaPerfil() {
               </View>
             </View>
 
-            {/* Testing Actions Row */}
+            {/* Testing Actions Row using ButtonCustom */}
             <View style={styles.livesTestActions}>
-              <TouchableOpacity
-                style={styles.testLoseLifeBtn}
+              <ButtonCustom
+                title="Simular Dano (-0.5)"
+                variant="danger"
                 onPress={() => loseLife(0.5)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.testLoseLifeBtnText}>Simular Erro (-0.5 Vida)</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.testRechargeBtn}
+                style={styles.testBtnFlex}
+              />
+              <ButtonCustom
+                title="Recarregar (3.0)"
+                variant="success"
                 onPress={rechargeLives}
-                activeOpacity={0.7}
-              >
-                <RotateCcw size={13} color="#ffffff" />
-                <Text style={styles.testRechargeBtnText}>Recarregar (3.0)</Text>
-              </TouchableOpacity>
+                icon={<RotateCcw size={13} color="#ffffff" />}
+                style={styles.testBtnFlex}
+              />
             </View>
           </View>
         </View>
       )}
 
-      {/* Logout Action (Single, Dedicated at bottom) */}
-      <TouchableOpacity
-        style={styles.logoutButton}
+      {/* Logout Action using ButtonCustom (Critério 4: Componentização) */}
+      <ButtonCustom
+        title="Sair da Conta"
+        variant="danger"
         onPress={logout}
-        activeOpacity={0.8}
-      >
-        <LogOut size={16} color="#f87171" />
-        <Text style={styles.logoutButtonText}>Sair da Conta</Text>
-      </TouchableOpacity>
+        icon={<LogOut size={16} color="#f87171" />}
+        style={styles.logoutBtn}
+      />
 
       {/* 3D Avatar Modal Inspection */}
       <Modal
@@ -523,7 +520,7 @@ export function TelaPerfil() {
             </TouchableOpacity>
 
             {inspectAvatar && (
-              <View style={{ alignItems: "center", width: "100%" }}>
+              <View style={styles.modalBodyCentered}>
                 {/* 3D Avatar Large Render */}
                 <View
                   style={[
@@ -566,25 +563,22 @@ export function TelaPerfil() {
                   </View>
                 </View>
 
-                {/* Equip Action Button in Modal */}
+                {/* Equip Action Button in Modal (Critério 4: Componentização) */}
                 {levelInfo.level >= inspectAvatar.levelRequired ? (
-                  <TouchableOpacity
-                    style={[
-                      styles.modalEquipBtn,
-                      levelInfo.currentAvatar.id === inspectAvatar.id && styles.modalEquipBtnSelected,
-                    ]}
+                  <ButtonCustom
+                    title={
+                      levelInfo.currentAvatar.id === inspectAvatar.id
+                        ? "AVATAR JÁ EQUIPADO"
+                        : "EQUIPAR ESTE AVATAR"
+                    }
+                    variant={levelInfo.currentAvatar.id === inspectAvatar.id ? "secondary" : "primary"}
                     onPress={() => {
                       setSelectedAvatarId(inspectAvatar.id);
                       setInspectAvatar(null);
                     }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.modalEquipBtnText}>
-                      {levelInfo.currentAvatar.id === inspectAvatar.id
-                        ? "AVATAR JÁ EQUIPADO"
-                        : "EQUIPAR ESTE AVATAR"}
-                    </Text>
-                  </TouchableOpacity>
+                    disabled={levelInfo.currentAvatar.id === inspectAvatar.id}
+                    style={styles.modalEquipBtnCustom}
+                  />
                 ) : (
                   <View style={styles.modalLockedBox}>
                     <Lock size={15} color="#cbd5e1" />
@@ -1325,5 +1319,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     color: "#cbd5e1",
+  },
+  avatarNameBold: {
+    color: "#ffffff",
+    fontWeight: "700",
+  },
+  flexItem: {
+    flex: 1,
+  },
+  whiteBoldText: {
+    color: "#ffffff",
+    fontWeight: "800",
+  },
+  dangerBoldText: {
+    color: "#fca5a5",
+    fontWeight: "700",
+  },
+  testBtnFlex: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  logoutBtn: {
+    marginTop: 26,
+  },
+  modalBodyCentered: {
+    alignItems: "center",
+    width: "100%",
+  },
+  modalEquipBtnCustom: {
+    marginTop: 18,
+    width: "100%",
   },
 });

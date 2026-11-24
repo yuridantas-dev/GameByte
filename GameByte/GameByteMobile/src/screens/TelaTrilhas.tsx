@@ -41,6 +41,7 @@ import { useApp } from "../context/AppContext";
 import { tracksData, trackStagesData, quizQuestionsData } from "../data/mockData";
 import { Track, TrackStage } from "../types";
 import { HeartDisplay } from "../components/HeartDisplay";
+import { ButtonCustom } from "../components/ButtonCustom";
 import { getStageGameData, StageGameData, CodeBlock, BugHunterLine } from "../data/gameData";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -309,7 +310,7 @@ export function TelaTrilhas() {
         {/* Card Body */}
         <View style={styles.cardBody}>
           <View style={styles.cardTitleRow}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.cardTitleInfo}>
               <Text style={styles.cardTitle}>{track.name}</Text>
               <Text style={styles.cardLessons}>{track.lessons}</Text>
             </View>
@@ -505,7 +506,7 @@ export function TelaTrilhas() {
                 <ArrowLeft size={16} color="#ffffff" />
               </TouchableOpacity>
 
-              <View style={{ flex: 1, marginLeft: 10 }}>
+              <View style={styles.mapHeaderTitleBox}>
                 <Text style={styles.mapHeaderTagline}>
                   {selectedTrack.category === "professional" ? "TRILHA PROFISSIONALIZANTE" : "TRILHA FUNDAMENTAL"}
                 </Text>
@@ -535,7 +536,7 @@ export function TelaTrilhas() {
             <View style={styles.studyBanner}>
               <BookOpen size={16} color="#ffd700" />
               <Text style={styles.studyBannerText}>
-                Clique em qualquer fase desbloqueada para abrir o <Text style={{ fontWeight: "800", color: "#ffffff" }}>Guia de Estudos</Text> antes do desafio!
+                Clique em qualquer fase desbloqueada para abrir o <Text style={styles.studyBannerHighlight}>Guia de Estudos</Text> antes do desafio!
               </Text>
             </View>
 
@@ -788,8 +789,8 @@ export function TelaTrilhas() {
                     {/* Mascot Tip Box */}
                     {activeStage.study?.mascotTip && (
                       <View style={styles.cleanTipCard}>
-                        <Lightbulb size={16} color="#ffd700" style={{ marginTop: 1 }} />
-                        <View style={{ flex: 1 }}>
+                        <Lightbulb size={16} color="#ffd700" style={styles.tipIcon} />
+                        <View style={styles.tipTextBox}>
                           <Text style={styles.cleanTipTitle}>Dica Prática</Text>
                           <Text style={styles.cleanTipDesc}>
                             {activeStage.study.mascotTip}
@@ -798,15 +799,13 @@ export function TelaTrilhas() {
                       </View>
                     )}
 
-                    {/* Action Button to start Quiz directly after studying */}
-                    <TouchableOpacity
-                      style={styles.cleanStudyReadyButton}
+                    {/* Action Button to start Quiz directly after studying (Critério 4: Componentização) */}
+                    <ButtonCustom
+                      title="Entendi! Fazer Desafio"
                       onPress={handleStartChallenge}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.cleanStudyReadyButtonText}>Entendi! Fazer Desafio</Text>
-                      <Play size={14} color="#ffffff" fill="#ffffff" />
-                    </TouchableOpacity>
+                      icon={<Play size={14} color="#ffffff" fill="#ffffff" />}
+                      style={styles.cleanStudyReadyCustom}
+                    />
                   </View>
                 ) : (
                   // --- 🎮 TAB: JOGOS & DESAFIOS PRÁTICOS ---
@@ -2892,5 +2891,27 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     color: "#9487b0",
     textAlign: "center",
+  },
+  cardTitleInfo: {
+    flex: 1,
+  },
+  mapHeaderTitleBox: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  studyBannerHighlight: {
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  tipIcon: {
+    marginTop: 1,
+  },
+  tipTextBox: {
+    flex: 1,
+  },
+  cleanStudyReadyCustom: {
+    marginTop: 6,
+    marginBottom: 10,
+    width: "100%",
   },
 });

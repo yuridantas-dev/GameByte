@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { HeartCrack, Clock, Sparkles, BookOpen, RotateCcw, X } from "lucide-react-native";
+import { HeartCrack, Clock, BookOpen, RotateCcw, X } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
+import { ButtonCustom } from "./ButtonCustom";
 
 export function OutOfLivesModal() {
   const {
@@ -63,30 +64,29 @@ export function OutOfLivesModal() {
           <View style={styles.tipBox}>
             <BookOpen size={16} color="#ffd700" />
             <Text style={styles.tipText}>
-              Dica: Enquanto espera, você pode revisar a teoria no <Text style={{ color: "#ffffff", fontWeight: "700" }}>Guia de Estudos</Text> sem gastar vidas!
+              Dica: Enquanto espera, você pode revisar a teoria no{" "}
+              <Text style={styles.tipBoldText}>Guia de Estudos</Text> sem gastar vidas!
             </Text>
           </View>
 
-          {/* Test/Developer Immediate Recharge */}
-          <TouchableOpacity
-            style={styles.rechargeBtn}
+          {/* Actions with Reusable ButtonCustom */}
+          <ButtonCustom
+            title="Recarregar Vidas (Modo Teste)"
+            variant="success"
             onPress={rechargeLives}
-            activeOpacity={0.8}
-          >
-            <RotateCcw size={15} color="#ffffff" />
-            <Text style={styles.rechargeBtnText}>Recarregar Vidas (Modo Teste)</Text>
-          </TouchableOpacity>
+            icon={<RotateCcw size={15} color="#ffffff" />}
+            style={styles.modalActionBtn}
+          />
 
-          <TouchableOpacity
-            style={styles.dismissBtn}
+          <ButtonCustom
+            title="Voltar para o Início"
+            variant="secondary"
             onPress={() => {
               setShowOutOfLivesModal(false);
               setCurrentTab("home");
             }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.dismissBtnText}>Voltar para o Início</Text>
-          </TouchableOpacity>
+            style={styles.modalDismissBtn}
+          />
         </View>
       </View>
     </Modal>
@@ -203,29 +203,14 @@ const styles = StyleSheet.create({
     color: "#d1c4e9",
     lineHeight: 15,
   },
-  rechargeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    width: "100%",
-    backgroundColor: "#6b4ee8",
-    paddingVertical: 12,
-    borderRadius: 14,
+  tipBoldText: {
+    color: "#ffffff",
+    fontWeight: "800",
+  },
+  modalActionBtn: {
     marginTop: 16,
   },
-  rechargeBtnText: {
-    fontSize: 12.5,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
-  dismissBtn: {
-    paddingVertical: 10,
-    marginTop: 4,
-  },
-  dismissBtnText: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: "#a69bbf",
+  modalDismissBtn: {
+    marginTop: 8,
   },
 });
