@@ -185,6 +185,10 @@ export function TelaTrilhas() {
   };
 
   const handleExecutePuzzle = () => {
+    if (lives <= 0) {
+      setShowOutOfLivesModal(true);
+      return;
+    }
     if (!stageGame || placedBlocks.length === 0 || !activeStage || !selectedTrackId) return;
 
     const isMatch =
@@ -210,6 +214,10 @@ export function TelaTrilhas() {
 
   // Bug Hunter Handlers
   const handleTapBugLine = (line: BugHunterLine) => {
+    if (lives <= 0) {
+      setShowOutOfLivesModal(true);
+      return;
+    }
     if (bugSolved || !stageGame || !activeStage || !selectedTrackId) return;
     setSelectedBugLine(line.lineNum);
 
@@ -231,6 +239,10 @@ export function TelaTrilhas() {
 
   // Quiz Handlers
   const handleAnswerSubmit = () => {
+    if (lives <= 0) {
+      setShowOutOfLivesModal(true);
+      return;
+    }
     if (!selectedOption || !selectedTrackId || !activeStage) return;
     const questions = quizQuestionsData[selectedTrackId]?.[activeStage.id] || [];
     const currentQ = questions[currentQuestionIndex];
@@ -432,7 +444,7 @@ export function TelaTrilhas() {
                 activeOpacity={0.7}
               >
                 <Text style={[styles.filterText, activeFilter === "professional" && styles.filterTextActive]}>
-                  🚀 Profissionalizantes
+                  Profissionalizantes
                 </Text>
               </TouchableOpacity>
 
@@ -442,7 +454,7 @@ export function TelaTrilhas() {
                 activeOpacity={0.7}
               >
                 <Text style={[styles.filterText, activeFilter === "fundamental" && styles.filterTextActive]}>
-                  📚 Fundamentos
+                  Fundamentos
                 </Text>
               </TouchableOpacity>
             </View>
@@ -660,7 +672,7 @@ export function TelaTrilhas() {
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
               {activeStage && (
                 modalTab === "study" ? (
-                  // --- 📖 TAB: GUIA DE ESTUDO SIMPLIFICADO & TÉCNICO ---
+                  // --- TAB: GUIA DE ESTUDO SIMPLIFICADO & TÉCNICO ---
                   <View style={styles.studyTabContent}>
                     {/* Header Badges */}
                     <View style={styles.modalBadgesRow}>
@@ -745,8 +757,8 @@ export function TelaTrilhas() {
                     {activeStage.study?.osiLayers && activeStage.study.osiLayers.length > 0 && (
                       <View style={styles.osiStackContainer}>
                         <View style={styles.sectionHeaderRow}>
-                          <Text style={styles.sectionHeaderTitle}>📶 MAPA VISUAL DAS 7 CAMADAS OSI</Text>
-                          <Text style={styles.sectionHeaderCount}>Topo ➔ Físico</Text>
+                          <Text style={styles.sectionHeaderTitle}>MAPA VISUAL DAS 7 CAMADAS OSI</Text>
+                          <Text style={styles.sectionHeaderCount}>Topo para Físico</Text>
                         </View>
                         <View style={styles.osiStackList}>
                           {activeStage.study.osiLayers.map((layer) => (
@@ -802,7 +814,7 @@ export function TelaTrilhas() {
                     />
                   </View>
                 ) : (
-                  // --- 🎮 TAB: JOGOS & DESAFIOS PRÁTICOS ---
+                  // --- TAB: JOGOS & DESAFIOS PRÁTICOS ---
                   <View style={styles.gamesTabContainer}>
                     {/* Game Mode Switcher */}
                     <View style={styles.gameModeSelector}>
@@ -820,7 +832,7 @@ export function TelaTrilhas() {
                             gameSubMode === "puzzle" && styles.gameModeBtnTextActive,
                           ]}
                         >
-                          🧩 Montar Código
+                          Montar Código
                         </Text>
                       </TouchableOpacity>
 
@@ -838,7 +850,7 @@ export function TelaTrilhas() {
                             gameSubMode === "bug" && styles.gameModeBtnTextActive,
                           ]}
                         >
-                          🐛 Caça ao Bug
+                          Caça ao Bug
                         </Text>
                       </TouchableOpacity>
 
@@ -856,7 +868,7 @@ export function TelaTrilhas() {
                             gameSubMode === "quiz" && styles.gameModeBtnTextActive,
                           ]}
                         >
-                          ⚡ Quiz Tático
+                          Quiz Tático
                         </Text>
                       </TouchableOpacity>
                     </View>

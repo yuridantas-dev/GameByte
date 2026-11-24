@@ -45,7 +45,7 @@ export function TelaInicio() {
         <View style={styles.heroTextContainer}>
           <Text style={styles.heroDate}>QUINTA · 21 DE AGOSTO</Text>
           <Text style={styles.heroTitle}>
-            Bom te ver de volta,{"\n"}Marina <Text style={styles.heroSparkle}>✦</Text>
+            Bom te ver de volta,{"\n"}Marina
           </Text>
         </View>
 
@@ -145,7 +145,7 @@ export function TelaInicio() {
           style={styles.challengeCard}
         >
           <View style={styles.challengeBadge}>
-            <Text style={styles.challengeBadgeText}>💡 MAPA DE CARREIRA</Text>
+            <Text style={styles.challengeBadgeText}>MAPA DE CARREIRA</Text>
           </View>
           <Text style={styles.challengeTitle}>
             Pronto para escolher sua trilha profissionalizante?

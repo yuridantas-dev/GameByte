@@ -24,7 +24,6 @@ import {
   X,
   Heart,
   Clock,
-  RotateCcw,
   GraduationCap,
   BookOpen,
   Users,
@@ -46,8 +45,6 @@ export function TelaPerfil() {
     lives,
     maxLives,
     rechargeHoursRemaining,
-    rechargeLives,
-    loseLife,
     logout,
     userRole,
     setUserRole,
@@ -715,23 +712,6 @@ export function TelaPerfil() {
                 </Text>
               </View>
             </View>
-
-            {/* Testing Actions Row using ButtonCustom */}
-            <View style={styles.livesTestActions}>
-              <ButtonCustom
-                title="Simular Dano (-0.5)"
-                variant="danger"
-                onPress={() => loseLife(0.5)}
-                style={styles.testBtnFlex}
-              />
-              <ButtonCustom
-                title="Recarregar (3.0)"
-                variant="success"
-                onPress={rechargeLives}
-                icon={<RotateCcw size={13} color="#ffffff" />}
-                style={styles.testBtnFlex}
-              />
-            </View>
           </View>
         </View>
       )}
@@ -1359,41 +1339,6 @@ const styles = StyleSheet.create({
     color: "#c5bdda",
     lineHeight: 15,
   },
-  livesTestActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 4,
-  },
-  testLoseLifeBtn: {
-    flex: 1,
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
-    paddingVertical: 9,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  testLoseLifeBtnText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#fca5a5",
-  },
-  testRechargeBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#10b981",
-    paddingVertical: 9,
-    borderRadius: 10,
-  },
-  testRechargeBtnText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
 
   // Logout
   logoutButton: {
@@ -1588,10 +1533,6 @@ const styles = StyleSheet.create({
   dangerBoldText: {
     color: "#fca5a5",
     fontWeight: "700",
-  },
-  testBtnFlex: {
-    flex: 1,
-    paddingVertical: 10,
   },
   logoutBtn: {
     marginTop: 26,

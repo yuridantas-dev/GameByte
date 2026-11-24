@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { HeartCrack, Clock, BookOpen, RotateCcw, X } from "lucide-react-native";
+import { HeartCrack, Clock, BookOpen, Home, X } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 import { ButtonCustom } from "./ButtonCustom";
 
@@ -15,7 +15,6 @@ export function OutOfLivesModal() {
   const {
     showOutOfLivesModal,
     setShowOutOfLivesModal,
-    rechargeLives,
     rechargeHoursRemaining,
     setCurrentTab,
   } = useApp();
@@ -71,21 +70,14 @@ export function OutOfLivesModal() {
 
           {/* Actions with Reusable ButtonCustom */}
           <ButtonCustom
-            title="Recarregar Vidas (Modo Teste)"
-            variant="success"
-            onPress={rechargeLives}
-            icon={<RotateCcw size={15} color="#ffffff" />}
-            style={styles.modalActionBtn}
-          />
-
-          <ButtonCustom
             title="Voltar para o Início"
-            variant="secondary"
+            variant="primary"
+            icon={<Home size={16} color="#ffffff" />}
             onPress={() => {
               setShowOutOfLivesModal(false);
               setCurrentTab("home");
             }}
-            style={styles.modalDismissBtn}
+            style={styles.modalActionBtn}
           />
         </View>
       </View>
@@ -209,8 +201,5 @@ const styles = StyleSheet.create({
   },
   modalActionBtn: {
     marginTop: 16,
-  },
-  modalDismissBtn: {
-    marginTop: 8,
   },
 });

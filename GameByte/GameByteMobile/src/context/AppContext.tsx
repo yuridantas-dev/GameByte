@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Track, LevelInfo, UserRole, ClassStudent, CreatedQuestion } from "../types";
 import { getLevelInfo, initialClassStudents, initialCreatedQuestions } from "../data/mockData";
 
@@ -59,7 +59,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lives, setLives] = useState(3.0); // 3 Corações cheios
   const maxLives = 3.0;
   const [showOutOfLivesModal, setShowOutOfLivesModal] = useState(false);
-  const [rechargeHoursRemaining] = useState("04h 00m");
+  const [rechargeEndTime, setRechargeEndTime] = useState<number | null>(null);
+  const [rechargeHoursRemaining, setRechargeHoursRemaining] = useState("04h 00m 00s");
   const [unlockedStages, setUnlockedStages] = useState<Record<string, number>>({
     network: 1,
     logic: 1,
@@ -70,6 +71,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ai: 1,
   });
 
+  // Temporizador em tempo real de 4 horas quando as vidas zeram
+  useEffect(() => {
+    if (!rechargeEndTime) return;
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const diffMs = rechargeEndTime - now;
+      const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
+
+      if (totalSeconds <= 0) {
+        // 4 Horas concluídas: restaura vidas automaticamente
+        setLives(3.0);
+        setRechargeEndTime(null);
+        setRechargeHoursRemaining("04h 00m 00s");
+        setShowOutOfLivesModal(false);
+      } else {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        setRechargeHoursRemaining(
+          `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`
+        );
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [rechargeEndTime]);
+
   const levelInfo = getLevelInfo(totalXp, selectedAvatarId);
 
   const handleSetCurrentTab = (tab: ScreenTab) => {
@@ -77,7 +108,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCurrentTab("teacher");
       return;
     }
+    // Aluno sem vidas não pode acessar as trilhas
+    if (userRole === "student" && tab === "tracks" && lives <= 0) {
+      if (!rechargeEndTime) {
+        setRechargeEndTime(Date.now() + 4 * 60 * 60 * 1000);
+      }
+      setShowOutOfLivesModal(true);
+      return;
+    }
     setCurrentTab(tab);
+  };
+
+  const handleSetShowOutOfLivesModal = (show: boolean) => {
+    if (show && lives <= 0 && !rechargeEndTime) {
+      setRechargeEndTime(Date.now() + 4 * 60 * 60 * 1000);
+    }
+    setShowOutOfLivesModal(show);
   };
 
   const handleSetUserRole = (role: UserRole) => {
@@ -123,6 +169,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const next = Math.max(0, Math.round((prev - amount) * 10) / 10);
       if (next <= 0) {
         stillAlive = false;
+        setRechargeEndTime((curr) => curr || Date.now() + 4 * 60 * 60 * 1000);
         setShowOutOfLivesModal(true);
       }
       return next;
@@ -132,6 +179,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const rechargeLives = () => {
     setLives(3.0);
+    setRechargeEndTime(null);
+    setRechargeHoursRemaining("04h 00m 00s");
     setShowOutOfLivesModal(false);
   };
 
@@ -237,7 +286,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         rechargeLives,
         rechargeHoursRemaining,
         showOutOfLivesModal,
-        setShowOutOfLivesModal,
+        setShowOutOfLivesModal: handleSetShowOutOfLivesModal,
         unlockedStages,
         unlockNextStage,
         getTrackProgress,
