@@ -1,0 +1,3429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameByte Mobile - Protótipo & Fluxo Oficial</title>
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    :root {
+      --bg-canvas: #090514;
+      --canvas-dot: #1f1238;
+      --app-bg: #160d2e;
+      --app-login-bg: #20113f;
+      --app-card: #211440;
+      --app-card-border: rgba(255, 255, 255, 0.08);
+      --primary-purple: #754fdf;
+      --primary-accent: #6b4ee8;
+      --primary-active: #5e40d3;
+      --accent-gold: #f6c768;
+      --accent-gold-alt: #f8c662;
+      --accent-orange: #ff9b73;
+      --accent-green: #4ade80;
+      --accent-cyan: #38bdf8;
+      --text-main: #ffffff;
+      --text-muted: #a399bf;
+      --text-sub: #d1c7f5;
+      --avatar-peach: #fdc8a9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Minimalist Floating Presentation Button */
+    .floating-pres-btn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      background: linear-gradient(135deg, #754fdf, #5535b7);
+      border: 1px solid #8b5cf6;
+      color: #ffffff;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 100;
+      box-shadow: 0 10px 25px rgba(117, 79, 223, 0.4), 0 0 20px rgba(139, 92, 246, 0.25);
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .floating-pres-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 14px 30px rgba(117, 79, 223, 0.6);
+      border-color: #a855f7;
+    }
+
+    /* Viewport & Pan/Zoom Canvas */
+    #viewport {
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+      cursor: grab;
+      background-color: var(--bg-canvas);
+      background-image: radial-gradient(var(--canvas-dot) 1.5px, transparent 1.5px);
+      background-size: 32px 32px;
+      overflow: hidden;
+    }
+
+    #viewport.dragging {
+      cursor: grabbing;
+    }
+
+    #canvas-world {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      width: 6000px;
+      height: 3400px;
+    }
+
+    /* SVG Connecting Curves */
+    #svg-connections {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .flow-path {
+      fill: none;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+    }
+
+    .flow-path.pulse {
+      stroke-dasharray: 8 6;
+      animation: dashMove 1.4s linear infinite;
+    }
+
+    @keyframes dashMove {
+      to { stroke-dashoffset: -28; }
+    }
+
+    .flow-badge {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: rgba(22, 13, 46, 0.96);
+      border: 1px solid var(--accent-cyan);
+      color: #e0f2fe;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 12px rgba(6, 182, 212, 0.3);
+      z-index: 25;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .flow-badge:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      background: #0c1a3a;
+      border-color: #38bdf8;
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.5);
+    }
+
+    /* Screen Node Box */
+    .screen-node {
+      position: absolute;
+      width: 375px;
+      background: transparent;
+      z-index: 20;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+      cursor: pointer;
+    }
+
+    .screen-node:hover {
+      z-index: 30;
+      transform: translateY(-6px);
+    }
+
+    .node-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 0 6px;
+    }
+
+    .node-step-pill {
+      font-size: 11px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #c084fc;
+      background: rgba(192, 132, 252, 0.15);
+      border: 1px solid rgba(192, 132, 252, 0.35);
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .node-title-box {
+      text-align: right;
+    }
+
+    .node-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .node-file {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    .click-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin-top: 3px;
+    }
+
+    /* Phone Mockup Frame (iPhone Form Factor) */
+    .phone-mockup {
+      width: 375px;
+      height: 760px;
+      background: var(--app-bg);
+      border-radius: 48px;
+      border: 9px solid #231742;
+      box-shadow: 
+        0 0 0 2px #4c3282,
+        0 30px 70px -10px rgba(0, 0, 0, 0.9),
+        0 0 40px rgba(117, 79, 223, 0.25);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Screen Dynamic Island & Status Bar */
+    .phone-status-bar {
+      height: 38px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      position: relative;
+      z-index: 50;
+      flex-shrink: 0;
+      background: var(--app-bg);
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: 9px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96px;
+      height: 22px;
+      background: #000000;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 9px;
+    }
+
+    .camera-lens {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #111a33;
+      border: 1px solid #1e293b;
+    }
+
+    .sensor-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #0f172a;
+    }
+
+    .phone-home-indicator {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 3px;
+      z-index: 60;
+    }
+
+    .phone-screen-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .phone-screen-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ========================================================
+       OFFICIAL APP COMPONENTS (100% IDENTICAL TO CODE)
+       ======================================================== */
+
+    /* Cabecalho.tsx */
+    .official-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: #160d2e;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .header-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-logo-icon-box {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: #6b4ee8;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-logo-icon-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .header-logo-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.6px;
+    }
+
+    .header-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-xp-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(93, 66, 202, 0.35);
+      border: 1px solid rgba(141, 117, 243, 0.3);
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #e9e4ff;
+      letter-spacing: 0.5px;
+    }
+
+    .header-bell-btn {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-notice-dot {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 7px;
+      height: 7px;
+      border-radius: 3.5px;
+      background: #ffbf66;
+    }
+
+    .header-avatar-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      background: var(--avatar-peach);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #5a2e44;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* MenuNavegacao.tsx */
+    .official-bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: rgba(24, 13, 51, 0.98);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 8px;
+      padding-bottom: 12px;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .official-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 64px;
+      gap: 3px;
+    }
+
+    .official-nav-iconbox {
+      width: 38px;
+      height: 34px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .official-nav-iconbox.active {
+      background: var(--primary-active);
+      box-shadow: 0 4px 8px rgba(94, 64, 211, 0.4);
+    }
+
+    .official-nav-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #9184aa;
+    }
+
+    .official-nav-label.active {
+      color: #b9a7ff;
+    }
+
+    /* ========================================================
+       EXACT SCREEN LAYOUTS (100% FAITHFUL TO CODE)
+       ======================================================== */
+
+    /* 1. TelaCarregamento */
+    .screen-loading-body {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .loading-circle-container {
+      width: 140px;
+      height: 140px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .loading-track {
+      position: absolute;
+      width: 136px;
+      height: 136px;
+      border-radius: 68px;
+      border: 3px solid rgba(168, 85, 247, 0.15);
+    }
+
+    .loading-spinning-ring {
+      position: absolute;
+      width: 136px;
+      height: 136px;
+      border-radius: 68px;
+      border: 3px solid transparent;
+      border-top-color: #b78af7;
+      border-right-color: #8b5cf6;
+      animation: spinRing 1.4s linear infinite;
+    }
+
+    @keyframes spinRing {
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-logo-box {
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .loading-text {
+      font-size: 14px;
+      color: #bba8db;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+    }
+
+    /* 2. TelaLogin (EXACT MATCH) */
+    .login-container-official {
+      background-color: var(--app-login-bg);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .login-glow-top {
+      position: absolute;
+      top: -50px;
+      left: -60px;
+      width: 240px;
+      height: 240px;
+      border-radius: 120px;
+      background-color: #6944df;
+      opacity: 0.28;
+      pointer-events: none;
+    }
+
+    .login-glow-bottom {
+      position: absolute;
+      bottom: -60px;
+      right: -50px;
+      width: 260px;
+      height: 260px;
+      border-radius: 130px;
+      background-color: #963c94;
+      opacity: 0.22;
+      pointer-events: none;
+    }
+
+    .login-hero-official {
+      background: linear-gradient(135deg, #754fdf, #5535b7, #2c165d);
+      border-bottom-left-radius: 32px;
+      border-bottom-right-radius: 32px;
+      padding: 24px 20px 28px 20px;
+      min-height: 270px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-dec-ring-top {
+      position: absolute;
+      top: -30px;
+      right: -40px;
+      width: 170px;
+      height: 170px;
+      border-radius: 85px;
+      border: 22px solid rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+    }
+
+    .login-dec-ring-bot {
+      position: absolute;
+      bottom: -70px;
+      left: -40px;
+      width: 180px;
+      height: 180px;
+      border-radius: 90px;
+      border: 24px solid rgba(196, 178, 255, 0.14);
+      pointer-events: none;
+    }
+
+    .login-mascot-official {
+      position: absolute;
+      right: -10px;
+      bottom: -5px;
+      width: 165px;
+      height: 165px;
+      object-fit: contain;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .login-form-official {
+      padding: 24px 20px 20px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .login-badge-official {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #c4b5fd;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+    }
+
+    .login-title-official {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .login-sub-official {
+      font-size: 12.5px;
+      color: #a399bf;
+      line-height: 18px;
+      margin-bottom: 18px;
+    }
+
+    .login-google-btn-official {
+      width: 100%;
+      background: #ffffff;
+      border: none;
+      border-radius: 18px;
+      padding: 13px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      margin-bottom: 16px;
+    }
+
+    .google-badge-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 12px;
+      background: #f2ebff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      color: #6b4ee8;
+    }
+
+    .divider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .divider-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: #7b6d9e;
+      letter-spacing: 1.2px;
+    }
+
+    .security-card-official {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .security-text-official {
+      font-size: 11px;
+      color: #b3a6d4;
+      line-height: 16px;
+    }
+
+    .footer-link-official {
+      text-align: center;
+      font-size: 11px;
+      color: #8c7fae;
+    }
+
+    .footer-link-official span {
+      color: #c4b5fd;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    /* 3. TelaInicio */
+    .home-body-padding {
+      padding: 16px 14px 24px 14px;
+    }
+
+    .home-hero-card {
+      background: linear-gradient(135deg, #5e3ed2, #3d277f, #2c165d);
+      border-radius: 24px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(133, 108, 233, 0.25);
+      margin-bottom: 12px;
+      min-height: 145px;
+    }
+
+    .home-hero-mascot {
+      position: absolute;
+      right: -20px;
+      bottom: -15px;
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+    }
+
+    .home-hero-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: #d5caff;
+      letter-spacing: 1.4px;
+      margin-bottom: 4px;
+    }
+
+    .home-hero-title {
+      font-size: 20px;
+      line-height: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+      max-width: 60%;
+    }
+
+    .home-stats-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .home-stat-card {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 18px;
+      padding: 10px;
+    }
+
+    .home-stat-iconbox {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .home-stat-label {
+      font-size: 8px;
+      font-weight: 800;
+      color: #a69bbf;
+      letter-spacing: 1px;
+    }
+
+    .home-stat-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 2px;
+    }
+
+    .home-challenge-card {
+      background: linear-gradient(135deg, #4d2daa, #2a1367, #120531);
+      border-radius: 24px;
+      border: 1px solid rgba(133, 108, 233, 0.35);
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+
+    .home-challenge-badge {
+      font-size: 9px;
+      font-weight: 800;
+      color: #f6c768;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+
+    .home-challenge-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+
+    .home-challenge-desc {
+      font-size: 11px;
+      color: #c9c0e6;
+      line-height: 16px;
+      margin-bottom: 12px;
+    }
+
+    .home-challenge-btn {
+      background: #f6c768;
+      border: none;
+      border-radius: 14px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #200e54;
+      cursor: pointer;
+    }
+
+    /* 4A. TelaTrilhas - Catálogo */
+    .tracks-header-box {
+      margin-bottom: 12px;
+    }
+
+    .tracks-header-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: #c4b5fd;
+      letter-spacing: 1.2px;
+      margin-bottom: 2px;
+    }
+
+    .tracks-header-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.4px;
+    }
+
+    .tracks-filter-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+    }
+
+    .tracks-filter-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 5px 12px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #a399bf;
+      white-space: nowrap;
+    }
+
+    .tracks-filter-pill.active {
+      background: #6b4ee8;
+      color: #ffffff;
+      border-color: #8b5cf6;
+    }
+
+    .track-official-card {
+      border-radius: 20px;
+      padding: 14px;
+      margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .track-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .track-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .track-xp-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #f8c662;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .track-card-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .track-card-info {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.85);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 4B. TelaTrilhas - Mapa de Fases (EXACT REAL WINDING BOARD) */
+    .track-map-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .track-back-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .study-banner-callout {
+      background: rgba(255, 215, 0, 0.08);
+      border: 1px solid rgba(255, 215, 0, 0.25);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 10.5px;
+      color: #d1c7f5;
+    }
+
+    .study-banner-callout strong {
+      color: #ffd700;
+    }
+
+    .trail-board-official {
+      position: relative;
+      padding: 10px 0 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .trail-center-line-official {
+      position: absolute;
+      top: 30px;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      z-index: 1;
+    }
+
+    .trail-node-row {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s;
+    }
+
+    .trail-node-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+
+    .trail-node-completed {
+      background: #059669;
+      border: 3px solid #34d399;
+      box-shadow: 0 0 16px rgba(52, 211, 153, 0.45);
+    }
+
+    .trail-node-current {
+      background: #5b21b6;
+      border: 3px solid #fbbf24;
+      box-shadow: 0 0 22px rgba(251, 191, 36, 0.6);
+      transform: scale(1.08);
+    }
+
+    .trail-node-locked {
+      background: #1c1338;
+      border: 2px solid #4a3a70;
+      opacity: 0.7;
+    }
+
+    .trail-node-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      background: #20113f;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .trail-node-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .trail-node-type {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #a399bf;
+      letter-spacing: 0.8px;
+    }
+
+    /* 4C. TelaTrilhas - MODAL DA ATIVIDADE / QUIZ (NEW SCREEN!) */
+    .modal-activity-card {
+      background: #211440;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 16px;
+      margin: 8px 0;
+      position: relative;
+    }
+
+    .modal-tabs-row {
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .modal-tab-btn {
+      flex: 1;
+      padding: 7px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: #a69abf;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .modal-tab-btn.active {
+      background: #6b4ee8;
+      color: #ffffff;
+    }
+
+    .quiz-question-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .quiz-q-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: #ffd700;
+      margin-bottom: 4px;
+    }
+
+    .quiz-q-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 18px;
+    }
+
+    .quiz-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .quiz-option-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .quiz-option-card.selected-correct {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: #10b981;
+    }
+
+    .quiz-option-letter {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .quiz-option-letter.correct {
+      background: #10b981;
+    }
+
+    .quiz-option-text {
+      font-size: 11.5px;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .quiz-submit-btn {
+      background: #10b981;
+      border: none;
+      border-radius: 14px;
+      padding: 12px;
+      width: 100%;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    /* 5. TelaRanking */
+    .ranking-podium-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 10px;
+      height: 195px;
+      margin-bottom: 16px;
+    }
+
+    .ranking-podium-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 88px;
+    }
+
+    .ranking-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 24px;
+      background: #443475;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      position: relative;
+      margin-bottom: 6px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .ranking-avatar.first {
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      border-color: #ffd700;
+      box-shadow: 0 0 16px rgba(255, 215, 0, 0.5);
+    }
+
+    .ranking-rank-pill {
+      position: absolute;
+      bottom: -4px;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 9.5px;
+      font-weight: 800;
+    }
+
+    .ranking-pedestal {
+      width: 100%;
+      border-radius: 14px 14px 0 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .ranking-list-card {
+      background: #211440;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .ranking-list-card.user-highlight {
+      background: rgba(94, 64, 211, 0.35);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    }
+
+    /* 6. TelaPerfil */
+    .profile-card {
+      background: #211440;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .profile-header-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .profile-avatar-large {
+      width: 60px;
+      height: 60px;
+      border-radius: 30px;
+      background: var(--avatar-peach);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: #5a2e44;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .badge-official-card {
+      background: #211440;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logout-official-btn {
+      width: 100%;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #f87171;
+      font-size: 13px;
+      font-weight: 800;
+      margin-top: 14px;
+      cursor: pointer;
+    }
+
+    /* ========================================================
+       SCREEN INSPECTION & SOURCE CODE VIEWER POPUP MODAL
+       ======================================================== */
+    .screen-inspector-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(4, 2, 10, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .screen-inspector-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .inspector-modal {
+      width: 90%;
+      max-width: 860px;
+      max-height: 88vh;
+      background: #170d30;
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 24px;
+      box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 40px rgba(117, 79, 223, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .inspector-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(26, 16, 53, 0.8);
+    }
+
+    .inspector-title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .inspector-icon-pill {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #6b4ee8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(107, 78, 232, 0.4);
+    }
+
+    .inspector-screen-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .inspector-file-path {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #c4b5fd;
+    }
+
+    .inspector-close-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .inspector-close-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+    }
+
+    .inspector-body {
+      flex: 1;
+      padding: 20px 24px;
+      overflow-y: auto;
+    }
+
+    .inspector-desc-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      line-height: 20px;
+      color: #d1c7f5;
+    }
+
+    .inspector-btn-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .code-action-btn {
+      background: linear-gradient(135deg, #754fdf, #5535b7);
+      border: 1px solid #8b5cf6;
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .code-action-btn:hover {
+      box-shadow: 0 0 15px rgba(117, 79, 223, 0.5);
+    }
+
+    .code-action-btn.secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .code-container {
+      background: #0d071d;
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 16px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .code-container.visible {
+      display: block;
+    }
+
+    .code-top-bar {
+      background: #160d2e;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: #a399bf;
+    }
+
+    .code-pre {
+      padding: 16px;
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 19px;
+      color: #e0d8f5;
+      overflow-x: auto;
+      max-height: 420px;
+      white-space: pre;
+    }
+
+    /* Floating Zoom Controls */
+    .zoom-controls {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      background: rgba(22, 13, 46, 0.92);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px;
+      z-index: 100;
+    }
+
+    .zoom-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .zoom-btn:hover { background: rgba(117, 79, 223, 0.4); }
+
+    /* MiniMap */
+    .minimap-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 230px;
+      height: 135px;
+      background: rgba(14, 8, 34, 0.94);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      z-index: 100;
+      padding: 8px;
+    }
+
+    .minimap-screen {
+      position: absolute;
+      background: #754fdf;
+      border-radius: 2px;
+    }
+
+    .minimap-vp-box {
+      position: absolute;
+      border: 2px solid #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Presentation Mode Button -->
+  <button class="floating-pres-btn" onclick="startPresentation()">
+    <i data-lucide="play" size="15"></i>
+    <span>Modo Apresentação</span>
+  </button>
+
+  <!-- Main Canvas Viewport -->
+  <main id="viewport">
+    <div id="canvas-world">
+      <!-- SVG Connecting Lines Layer -->
+      <svg id="svg-connections">
+        <defs>
+          <linearGradient id="grad-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a855f7" />
+            <stop offset="100%" stop-color="#6366f1" />
+          </linearGradient>
+          <linearGradient id="grad-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#06b6d4" />
+            <stop offset="100%" stop-color="#3b82f6" />
+          </linearGradient>
+          <linearGradient id="grad-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#ea580c" />
+          </linearGradient>
+          <linearGradient id="grad-pink" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ec4899" />
+            <stop offset="100%" stop-color="#8b5cf6" />
+          </linearGradient>
+
+          <!-- Marker Arrows -->
+          <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#a855f7" />
+          </marker>
+          <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#06b6d4" />
+          </marker>
+          <marker id="arrow-gold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+          </marker>
+          <marker id="arrow-pink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#ec4899" />
+          </marker>
+        </defs>
+
+        <!-- 1. Splash -> Login -->
+        <path id="path-splash-login" class="flow-path pulse" stroke="url(#grad-purple)" marker-end="url(#arrow-purple)" />
+        
+        <!-- 2. Login -> Home -->
+        <path id="path-login-home" class="flow-path pulse" stroke="url(#grad-purple)" marker-end="url(#arrow-purple)" />
+
+        <!-- 3. Home -> Tracks (Catalog) -->
+        <path id="path-home-tracks" class="flow-path pulse" stroke="url(#grad-cyan)" marker-end="url(#arrow-cyan)" />
+
+        <!-- 4. Tracks Catalog -> Stage Map -->
+        <path id="path-tracks-map" class="flow-path pulse" stroke="url(#grad-cyan)" marker-end="url(#arrow-cyan)" />
+
+        <!-- 5. Stage Map -> Activity / Quiz Modal -->
+        <path id="path-map-quiz" class="flow-path pulse" stroke="url(#grad-cyan)" marker-end="url(#arrow-cyan)" />
+
+        <!-- 6. Home -> Ranking -->
+        <path id="path-home-ranking" class="flow-path pulse" stroke="url(#grad-gold)" marker-end="url(#arrow-gold)" />
+
+        <!-- 7. Home -> Profile -->
+        <path id="path-home-profile" class="flow-path pulse" stroke="url(#grad-pink)" marker-end="url(#arrow-pink)" />
+      </svg>
+
+      <!-- Flow Action Badges (Clickable triggers) -->
+      <div id="badge-1" class="flow-badge" style="border-color: #a855f7;" onclick="focusNode('node-login')">
+        <i data-lucide="timer" size="12" color="#c084fc"></i>
+        <span>2.2s Splash Finish</span>
+      </div>
+
+      <div id="badge-2" class="flow-badge" style="border-color: #a855f7;" onclick="focusNode('node-home')">
+        <i data-lucide="check-circle-2" size="12" color="#a855f7"></i>
+        <span>Login Google ➔ Home</span>
+      </div>
+
+      <div id="badge-3" class="flow-badge" style="border-color: #06b6d4;" onclick="focusNode('node-tracks')">
+        <i data-lucide="compass" size="12" color="#06b6d4"></i>
+        <span>Explorar Trilhas</span>
+      </div>
+
+      <div id="badge-4" class="flow-badge" style="border-color: #06b6d4;" onclick="focusNode('node-stagemap')">
+        <i data-lucide="play-circle" size="12" color="#06b6d4"></i>
+        <span>Abrir Trilha Lógica</span>
+      </div>
+
+      <div id="badge-5" class="flow-badge" style="border-color: #06b6d4;" onclick="focusNode('node-quizmodal')">
+        <i data-lucide="gamepad-2" size="12" color="#06b6d4"></i>
+        <span>Jogar Fase 3 (Quiz)</span>
+      </div>
+
+      <div id="badge-6" class="flow-badge" style="border-color: #f59e0b;" onclick="focusNode('node-ranking')">
+        <i data-lucide="trophy" size="12" color="#f59e0b"></i>
+        <span>Tab Ranking</span>
+      </div>
+
+      <div id="badge-7" class="flow-badge" style="border-color: #ec4899;" onclick="focusNode('node-profile')">
+        <i data-lucide="user" size="12" color="#ec4899"></i>
+        <span>Tab Perfil</span>
+      </div>
+
+      <!-- ==============================================
+           7 MOBILE SCREENS (EXACT MATCH TO REAL CODE)
+           ============================================== -->
+
+      <!-- 1. TELA CARREGAMENTO -->
+      <section id="node-splash" class="screen-node" style="left: 150px; top: 500px;" onclick="openInspector('splash')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="sparkles" size="12"></i> 01 · SPLASH</div>
+          <div class="node-title-box">
+            <div class="node-name">TelaCarregamento</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <div class="phone-screen-body">
+            <div class="screen-loading-body">
+              <div class="loading-circle-container">
+                <div class="loading-track"></div>
+                <div class="loading-spinning-ring"></div>
+                <div class="loading-logo-box">
+                  <img src="./GameByteMobile/assets/logo_clean_transparent.png" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/yuridantas-dev/GameByte/main/GameByteMobile/assets/logo_clean_transparent.png';" alt="Logo" />
+                </div>
+              </div>
+              <div class="loading-text">Carregando...</div>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+      <!-- 2. TELA LOGIN (100% IDENTICAL) -->
+      <section id="node-login" class="screen-node" style="left: 780px; top: 500px;" onclick="openInspector('login')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="key" size="12"></i> 02 · LOGIN</div>
+          <div class="node-title-box">
+            <div class="node-name">TelaLogin</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar" style="background:#754fdf;">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <div class="phone-screen-body" style="background-color: var(--app-login-bg);">
+            <div class="login-container-official">
+              <div class="login-glow-top"></div>
+              <div class="login-glow-bottom"></div>
+
+              <!-- Top Hero Section -->
+              <div class="login-hero-official">
+                <div class="login-dec-ring-top"></div>
+                <div class="login-dec-ring-bot"></div>
+
+                <!-- Logo Row -->
+                <div style="display:flex; align-items:center; gap:8px; z-index:3; position:relative;">
+                  <div style="width:34px; height:34px; border-radius:12px; background:#6b4ee8; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                    <img src="./GameByteMobile/assets/logo_clean_transparent.png" style="width:100%; height:100%; object-fit:cover;" />
+                  </div>
+                  <span style="font-size:20px; font-weight:800; color:#fff; letter-spacing:-0.6px;">GameByte</span>
+                </div>
+
+                <!-- Hero Copy -->
+                <div style="margin-top:20px; max-width:58%; z-index:2; position:relative;">
+                  <div style="font-family:'JetBrains Mono', monospace; font-size:9.5px; font-weight:700; color:#d5caff; letter-spacing:1.4px; margin-bottom:4px;">SEU GAME DE APRENDIZADO</div>
+                  <div style="font-size:20px; line-height:23px; font-weight:800; color:#fff; letter-spacing:-0.5px; margin-bottom:6px;">
+                    Aprender pode ser o seu melhor <span style="color:#f6c768;">jogo.</span>
+                  </div>
+                  <div style="font-size:11.5px; color:#d1c7f5; line-height:16px;">
+                    Domine habilidades, conclua missões e suba no ranking com a sua turma.
+                  </div>
+                </div>
+
+                <img class="login-mascot-official" src="./GameByteMobile/assets/mascote_transparent.png" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/yuridantas-dev/GameByte/main/GameByteMobile/assets/mascote_transparent.png';" alt="Mascote" />
+              </div>
+
+              <!-- Bottom Form Section -->
+              <div class="login-form-official">
+                <div class="login-badge-official">BOAS-VINDAS</div>
+                <div class="login-title-official">Entre e continue sua jornada.</div>
+                <div class="login-sub-official">Use a sua conta institucional para acessar suas trilhas e seu progresso.</div>
+
+                <button class="login-google-btn-official">
+                  <div class="google-badge-circle">G</div>
+                  <span style="font-size:13.5px; font-weight:700; color:#1a0f30;">Continuar com Google</span>
+                </button>
+
+                <div class="divider-row">
+                  <div class="divider-line"></div>
+                  <div class="divider-text">ACESSO SEGURO</div>
+                  <div class="divider-line"></div>
+                </div>
+
+                <div class="security-card-official">
+                  <i data-lucide="lock" size="15" color="#b5a2ff" style="flex-shrink:0; margin-top:1px;"></i>
+                  <div class="security-text-official">
+                    Ao entrar, você concorda com os termos de uso e a política de privacidade do GameByte.
+                  </div>
+                </div>
+
+                <div class="footer-link-official">
+                  Ainda não tem acesso? <span>Fale com sua instituição</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+      <!-- 3. TELA INÍCIO (HOME) -->
+      <section id="node-home" class="screen-node" style="left: 1410px; top: 500px;" onclick="openInspector('home')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="home" size="12"></i> 03 · HOME</div>
+          <div class="node-title-box">
+            <div class="node-name">TelaInicio</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <!-- Official Cabecalho.tsx -->
+          <div class="official-header">
+            <div class="header-logo-row">
+              <div class="header-logo-icon-box">
+                <img src="./GameByteMobile/assets/logo_clean_transparent.png" />
+              </div>
+              <span class="header-logo-text">GameByte</span>
+            </div>
+            <div class="header-actions-row">
+              <div class="header-xp-pill">
+                <i data-lucide="zap" size="13" color="#f8c662" fill="#f8c662"></i>
+                <span>1.420 XP</span>
+              </div>
+              <div class="header-bell-btn">
+                <i data-lucide="bell" size="17" color="#c9c1df"></i>
+                <div class="header-notice-dot"></div>
+              </div>
+              <div class="header-avatar-btn">M</div>
+            </div>
+          </div>
+
+          <div class="phone-screen-body">
+            <div class="home-body-padding">
+              <!-- Hero Card -->
+              <div class="home-hero-card">
+                <div class="home-hero-date">QUINTA · 21 DE AGOSTO</div>
+                <div class="home-hero-title">
+                  Bom te ver de volta,<br>Marina <span style="color:#f6c768;">✦</span>
+                </div>
+                <img class="home-hero-mascot" src="./GameByteMobile/assets/mascote_transparent.png" />
+              </div>
+
+              <!-- 3 Stat Cards -->
+              <div class="home-stats-row">
+                <div class="home-stat-card">
+                  <div class="home-stat-iconbox" style="background:#55304c;">
+                    <i data-lucide="flame" size="16" color="#ff9b73" fill="#ff9b73"></i>
+                  </div>
+                  <div class="home-stat-label">SEQUÊNCIA</div>
+                  <div class="home-stat-val">12 dias</div>
+                </div>
+
+                <div class="home-stat-card">
+                  <div class="home-stat-iconbox" style="background:#55472a;">
+                    <i data-lucide="zap" size="16" color="#f6c768" fill="#f6c768"></i>
+                  </div>
+                  <div class="home-stat-label">XP TOTAL</div>
+                  <div class="home-stat-val">1.420</div>
+                </div>
+
+                <div class="home-stat-card">
+                  <div class="home-stat-iconbox" style="background:#443475;">
+                    <i data-lucide="trophy" size="16" color="#ae9aff"></i>
+                  </div>
+                  <div class="home-stat-label">POSIÇÃO</div>
+                  <div class="home-stat-val">#18</div>
+                </div>
+              </div>
+
+              <!-- Challenge Card -->
+              <div class="home-challenge-card">
+                <div class="home-challenge-badge">💡 MAPA DE CARREIRA</div>
+                <div class="home-challenge-title">Pronto para escolher sua trilha profissionalizante?</div>
+                <div class="home-challenge-desc">Conclua as matérias fundamentais para desbloquear especializações em Cibersegurança, Full Stack, Cloud e Inteligência Artificial no GameByte.</div>
+                <button class="home-challenge-btn">
+                  <i data-lucide="compass" size="14"></i>
+                  <span>Explorar Trilhas</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Official MenuNavegacao.tsx -->
+          <div class="official-bottom-nav">
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox active">
+                <i data-lucide="home" size="18" color="#fff"></i>
+              </div>
+              <span class="official-nav-label active">Início</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="layout-grid" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Trilhas</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="trophy" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Ranking</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="user" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Perfil</span>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+      <!-- 4A. TELA TRILHAS (CATÁLOGO) -->
+      <section id="node-tracks" class="screen-node" style="left: 2040px; top: 80px;" onclick="openInspector('tracks')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="layout-grid" size="12"></i> 04A · CATÁLOGO</div>
+          <div class="node-title-box">
+            <div class="node-name">Trilhas (Catálogo)</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <!-- Official Cabecalho.tsx -->
+          <div class="official-header">
+            <div class="header-logo-row">
+              <div class="header-logo-icon-box">
+                <img src="./GameByteMobile/assets/logo_clean_transparent.png" />
+              </div>
+              <span class="header-logo-text">GameByte</span>
+            </div>
+            <div class="header-actions-row">
+              <div class="header-xp-pill">
+                <i data-lucide="zap" size="13" color="#f8c662" fill="#f8c662"></i>
+                <span>1.420 XP</span>
+              </div>
+              <div class="header-bell-btn">
+                <i data-lucide="bell" size="17" color="#c9c1df"></i>
+              </div>
+              <div class="header-avatar-btn">M</div>
+            </div>
+          </div>
+
+          <div class="phone-screen-body">
+            <div style="padding:14px;">
+              <div class="tracks-header-box">
+                <div class="tracks-header-tag">SEU MAPA DE CARREIRA TECH</div>
+                <div class="tracks-header-title">Trilhas & Especializações.</div>
+              </div>
+
+              <!-- Filter Pills -->
+              <div class="tracks-filter-row">
+                <div class="tracks-filter-pill active">Todas</div>
+                <div class="tracks-filter-pill">🚀 Profissionalizantes</div>
+                <div class="tracks-filter-pill">📚 Fundamentos</div>
+              </div>
+
+              <!-- Track 1: Lógica -->
+              <div class="track-official-card" style="background: linear-gradient(135deg, #287a8e, #1d405e);">
+                <div class="track-top-row">
+                  <div class="track-icon-box"><i data-lucide="cpu" size="20" color="#fff"></i></div>
+                  <div class="track-xp-tag">60 XP</div>
+                </div>
+                <div class="track-card-name">Lógica de Programação</div>
+                <div class="track-card-info">
+                  <span>5 fases</span>
+                  <span>•</span>
+                  <span style="color:#4ade80;">Desbloqueada</span>
+                </div>
+              </div>
+
+              <!-- Track 2: Python -->
+              <div class="track-official-card" style="background: linear-gradient(135deg, #2563eb, #1e3a8a);">
+                <div class="track-top-row">
+                  <div class="track-icon-box"><i data-lucide="terminal" size="20" color="#fff"></i></div>
+                  <div class="track-xp-tag">90 XP</div>
+                </div>
+                <div class="track-card-name">Linguagem Python (Iniciante)</div>
+                <div class="track-card-info">
+                  <span>5 fases</span>
+                  <span>•</span>
+                  <span style="color:#fcd34d;">Pré-requisito: Lógica</span>
+                </div>
+              </div>
+
+              <!-- Track 3: Full Stack -->
+              <div class="track-official-card" style="background: linear-gradient(135deg, #6366f1, #312e81);">
+                <div class="track-top-row">
+                  <div class="track-icon-box"><i data-lucide="layers" size="20" color="#fff"></i></div>
+                  <div class="track-xp-tag">180 XP</div>
+                </div>
+                <div class="track-card-name">Desenvolvimento Full Stack</div>
+                <div class="track-card-info">
+                  <span>5 fases</span>
+                  <span>•</span>
+                  <span style="color:#f87171;"><i data-lucide="lock" size="11"></i> Bloqueada</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Official MenuNavegacao.tsx -->
+          <div class="official-bottom-nav">
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="home" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Início</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox active">
+                <i data-lucide="layout-grid" size="18" color="#fff"></i>
+              </div>
+              <span class="official-nav-label active">Trilhas</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="trophy" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Ranking</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="user" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Perfil</span>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+      <!-- 4B. TELA TRILHAS (MAPA DE FASES SNAKE) -->
+      <section id="node-stagemap" class="screen-node" style="left: 2670px; top: 80px;" onclick="openInspector('stagemap')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="route" size="12"></i> 04B · FASES</div>
+          <div class="node-title-box">
+            <div class="node-name">Mapa de Fases (Lógica)</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <!-- Official Cabecalho.tsx -->
+          <div class="official-header">
+            <div class="header-logo-row">
+              <div class="header-logo-icon-box">
+                <img src="./GameByteMobile/assets/logo_clean_transparent.png" />
+              </div>
+              <span class="header-logo-text">GameByte</span>
+            </div>
+            <div class="header-actions-row">
+              <div class="header-xp-pill">
+                <i data-lucide="zap" size="13" color="#f8c662" fill="#f8c662"></i>
+                <span>1.420 XP</span>
+              </div>
+              <div class="header-bell-btn">
+                <i data-lucide="bell" size="17" color="#c9c1df"></i>
+              </div>
+              <div class="header-avatar-btn">M</div>
+            </div>
+          </div>
+
+          <div class="phone-screen-body">
+            <div style="padding:14px;">
+              <!-- Stage Map Header -->
+              <div class="track-map-header">
+                <div class="track-back-btn">
+                  <i data-lucide="arrow-left" size="18" color="#ffffff"></i>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:15px; font-weight:800; color:#fff;">Lógica de Programação</div>
+                  <div style="font-size:11px; color:#a399bf;">Progresso: 40% concluído</div>
+                </div>
+              </div>
+
+              <!-- Study Guide Callout Banner -->
+              <div class="study-banner-callout">
+                <i data-lucide="book-open" size="16" color="#ffd700"></i>
+                <div>Clique na fase para abrir o <strong>Guia de Estudos</strong> e o desafio!</div>
+              </div>
+
+              <!-- Exact Winding Trail Board (Zig-Zag Offset) -->
+              <div class="trail-board-official">
+                <div class="trail-center-line-official"></div>
+
+                <!-- Phase 1 (Offset Left) -->
+                <div class="trail-node-row" style="transform: translateX(-35px);">
+                  <div class="trail-node-btn trail-node-completed">
+                    <i data-lucide="check" size="26" color="#fff" stroke-width="3"></i>
+                    <div class="trail-node-badge">1</div>
+                  </div>
+                  <div class="trail-node-title">Variáveis & Tipos</div>
+                  <div class="trail-node-type">QUIZ · CONCLUÍDO</div>
+                </div>
+
+                <!-- Phase 2 (Center) -->
+                <div class="trail-node-row" style="transform: translateX(0px);">
+                  <div class="trail-node-btn trail-node-completed">
+                    <i data-lucide="check" size="26" color="#fff" stroke-width="3"></i>
+                    <div class="trail-node-badge">2</div>
+                  </div>
+                  <div class="trail-node-title">Condicionais (if/else)</div>
+                  <div class="trail-node-type">QUIZ · CONCLUÍDO</div>
+                </div>
+
+                <!-- Phase 3 (Offset Right - ACTIVE CURRENT) -->
+                <div class="trail-node-row" style="transform: translateX(35px);">
+                  <div class="trail-node-btn trail-node-current">
+                    <i data-lucide="star" size="26" color="#fbbf24" fill="#fbbf24"></i>
+                    <div class="trail-node-badge" style="border-color:#fbbf24; color:#fbbf24;">3</div>
+                  </div>
+                  <div class="trail-node-title" style="color:#fbbf24;">Estruturas de Repetição</div>
+                  <div class="trail-node-type" style="color:#fcd34d;">DISPONÍVEL AGORA</div>
+                </div>
+
+                <!-- Phase 4 (Center - Locked) -->
+                <div class="trail-node-row" style="transform: translateX(0px);">
+                  <div class="trail-node-btn trail-node-locked">
+                    <i data-lucide="lock" size="18" color="#7b6b9e"></i>
+                    <div class="trail-node-badge">4</div>
+                  </div>
+                  <div class="trail-node-title" style="color:#6b7280;">Funções & Escopo</div>
+                  <div class="trail-node-type">BLOQUEADA</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Official MenuNavegacao.tsx -->
+          <div class="official-bottom-nav">
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="home" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Início</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox active">
+                <i data-lucide="layout-grid" size="18" color="#fff"></i>
+              </div>
+              <span class="official-nav-label active">Trilhas</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="trophy" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Ranking</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="user" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Perfil</span>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+      <!-- 4C. TELA ATIVIDADE / DESAFIO DA FASE (QUIZ MODAL) -->
+      <section id="node-quizmodal" class="screen-node" style="left: 3300px; top: 80px;" onclick="openInspector('quiz')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="gamepad-2" size="12"></i> 04C · ATIVIDADE</div>
+          <div class="node-title-box">
+            <div class="node-name">Desafio / Quiz da Fase</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <div class="phone-screen-body">
+            <div style="padding:14px;">
+              <!-- Modal Card Header -->
+              <div class="modal-activity-card">
+                <!-- Navigation Tabs inside Modal -->
+                <div class="modal-tabs-row">
+                  <button class="modal-tab-btn">
+                    <i data-lucide="book-open" size="12"></i>
+                    <span>Guia de Estudo</span>
+                  </button>
+                  <button class="modal-tab-btn active">
+                    <i data-lucide="gamepad-2" size="12"></i>
+                    <span>Desafio (+10 XP)</span>
+                  </button>
+                </div>
+
+                <!-- Quiz Progress Bar -->
+                <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:800; color:#a399bf; margin-bottom:6px;">
+                  <span>QUESTÃO 1 DE 3</span>
+                  <span style="color:#ffd700;">★ 10 XP</span>
+                </div>
+
+                <!-- Quiz Question Box -->
+                <div class="quiz-question-box">
+                  <div class="quiz-q-tag">ESTRUTURAS DE REPETIÇÃO</div>
+                  <div class="quiz-q-title">
+                    Qual das seguintes estruturas em JavaScript executa o bloco de código pelo menos uma vez antes de verificar a condição?
+                  </div>
+                </div>
+
+                <!-- Quiz Options -->
+                <div class="quiz-options-list">
+                  <div class="quiz-option-card">
+                    <div class="quiz-option-letter">A</div>
+                    <div class="quiz-option-text">for (let i = 0; i &lt; n; i++)</div>
+                  </div>
+
+                  <div class="quiz-option-card">
+                    <div class="quiz-option-letter">B</div>
+                    <div class="quiz-option-text">while (condicao) { ... }</div>
+                  </div>
+
+                  <div class="quiz-option-card selected-correct">
+                    <div class="quiz-option-letter correct">C</div>
+                    <div class="quiz-option-text" style="color:#34d399; font-weight:700;">do { ... } while (condicao);</div>
+                  </div>
+
+                  <div class="quiz-option-card">
+                    <div class="quiz-option-letter">D</div>
+                    <div class="quiz-option-text">forEach((item) =&gt; { ... })</div>
+                  </div>
+                </div>
+
+                <!-- Action Button -->
+                <button class="quiz-submit-btn">
+                  <i data-lucide="check" size="16"></i>
+                  <span>Confirmar Resposta (+10 XP)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+      <!-- 5. TELA RANKING -->
+      <section id="node-ranking" class="screen-node" style="left: 2040px; top: 900px;" onclick="openInspector('ranking')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="trophy" size="12"></i> 05 · RANKING</div>
+          <div class="node-title-box">
+            <div class="node-name">TelaRanking</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <!-- Official Cabecalho.tsx -->
+          <div class="official-header">
+            <div class="header-logo-row">
+              <div class="header-logo-icon-box">
+                <img src="./GameByteMobile/assets/logo_clean_transparent.png" />
+              </div>
+              <span class="header-logo-text">GameByte</span>
+            </div>
+            <div class="header-actions-row">
+              <div class="header-xp-pill">
+                <i data-lucide="zap" size="13" color="#f8c662" fill="#f8c662"></i>
+                <span>1.420 XP</span>
+              </div>
+              <div class="header-bell-btn">
+                <i data-lucide="bell" size="17" color="#c9c1df"></i>
+              </div>
+              <div class="header-avatar-btn">M</div>
+            </div>
+          </div>
+
+          <div class="phone-screen-body">
+            <div style="padding:14px;">
+              <div class="ranking-header-block">
+                <div class="ranking-tagline">CLASSIFICAÇÃO ADS</div>
+                <div class="ranking-title">Ranking da galera.</div>
+                <div class="ranking-sub">Cada missão concluída soma XP. Acompanhe seu lugar entre os alunos.</div>
+              </div>
+
+              <!-- Official Podium -->
+              <div class="ranking-podium-row">
+                <!-- 2nd Place -->
+                <div class="ranking-podium-col">
+                  <div style="font-size:18px; margin-bottom:2px;">🥈</div>
+                  <div class="ranking-avatar">
+                    <span>LM</span>
+                    <div class="ranking-rank-pill" style="background:rgba(203,213,225,0.2); color:#cbd5e1;">2</div>
+                  </div>
+                  <div style="font-size:10px; font-weight:800; color:#fff;">Lucas</div>
+                  <div style="font-size:9px; color:#cbd5e1; margin-bottom:4px;">2.140 XP</div>
+                  <div class="ranking-pedestal" style="height:85px; background:linear-gradient(to top, rgba(30,20,66,0.95), rgba(37,27,79,0.8));">2º</div>
+                </div>
+
+                <!-- 1st Place -->
+                <div class="ranking-podium-col">
+                  <div style="margin-bottom:2px;"><i data-lucide="crown" size="24" color="#f5c463" fill="#f5c463"></i></div>
+                  <div class="ranking-avatar first">
+                    <span>EG</span>
+                    <div class="ranking-rank-pill" style="background:rgba(255,215,0,0.3); color:#ffd700;">1</div>
+                  </div>
+                  <div style="font-size:11px; font-weight:800; color:#fff;">Enzo</div>
+                  <div style="font-size:10px; font-weight:800; color:#ffd700; margin-bottom:4px;">2.450 XP</div>
+                  <div class="ranking-pedestal" style="height:115px; background:linear-gradient(to top, rgba(39,26,16,0.98), rgba(67,45,29,0.9)); color:#ffd700;">1º</div>
+                </div>
+
+                <!-- 3rd Place -->
+                <div class="ranking-podium-col">
+                  <div style="font-size:18px; margin-bottom:2px;">🥉</div>
+                  <div class="ranking-avatar">
+                    <span>CR</span>
+                    <div class="ranking-rank-pill" style="background:rgba(205,127,50,0.25); color:#fca5a5;">3</div>
+                  </div>
+                  <div style="font-size:10px; font-weight:800; color:#fff;">Camila</div>
+                  <div style="font-size:9px; color:#fca5a5; margin-bottom:4px;">1.890 XP</div>
+                  <div class="ranking-pedestal" style="height:65px; background:linear-gradient(to top, rgba(30,20,66,0.95), rgba(37,27,79,0.8));">3º</div>
+                </div>
+              </div>
+
+              <!-- Leaderboard Rows -->
+              <div class="ranking-list-card">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#9ca3af;">#4</span>
+                  <span style="font-size:12px; font-weight:700; color:#fff;">Gabriel Santos</span>
+                </div>
+                <span style="font-size:11px; font-weight:800; color:#e9e4ff;">1.780 XP</span>
+              </div>
+
+              <!-- Current User Row -->
+              <div class="ranking-list-card user-highlight">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#f8c662;">#18</span>
+                  <span style="font-size:12px; font-weight:800; color:#fff;">Marina Silva (Você)</span>
+                </div>
+                <span style="font-size:11px; font-weight:800; color:#f8c662;">1.420 XP</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Official MenuNavegacao.tsx -->
+          <div class="official-bottom-nav">
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="home" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Início</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="layout-grid" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Trilhas</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox active">
+                <i data-lucide="trophy" size="18" color="#fff"></i>
+              </div>
+              <span class="official-nav-label active">Ranking</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="user" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Perfil</span>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+      <!-- 6. TELA PERFIL -->
+      <section id="node-profile" class="screen-node" style="left: 2040px; top: 1720px;" onclick="openInspector('profile')">
+        <div class="node-header">
+          <div class="node-step-pill"><i data-lucide="user" size="12"></i> 06 · PERFIL</div>
+          <div class="node-title-box">
+            <div class="node-name">TelaPerfil</div>
+            <div class="click-hint"><i data-lucide="code" size="10"></i> Clique p/ Ver Código</div>
+          </div>
+        </div>
+
+        <div class="phone-mockup">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="sensor-dot"></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <i data-lucide="wifi" size="12"></i>
+              <i data-lucide="battery" size="12"></i>
+            </div>
+          </div>
+
+          <!-- Official Cabecalho.tsx -->
+          <div class="official-header">
+            <div class="header-logo-row">
+              <div class="header-logo-icon-box">
+                <img src="./GameByteMobile/assets/logo_clean_transparent.png" />
+              </div>
+              <span class="header-logo-text">GameByte</span>
+            </div>
+            <div class="header-actions-row">
+              <div class="header-xp-pill">
+                <i data-lucide="zap" size="13" color="#f8c662" fill="#f8c662"></i>
+                <span>1.420 XP</span>
+              </div>
+              <div class="header-bell-btn">
+                <i data-lucide="bell" size="17" color="#c9c1df"></i>
+              </div>
+              <div class="header-avatar-btn">M</div>
+            </div>
+          </div>
+
+          <div class="phone-screen-body">
+            <div style="padding:14px;">
+              <!-- Profile Card -->
+              <div class="profile-card">
+                <div class="profile-header-row">
+                  <div class="profile-avatar-large">M</div>
+                  <div>
+                    <div class="profile-user-name">Marina Silva</div>
+                    <div class="profile-user-role">Bootcamp ADS · Turma 2026.2</div>
+                    <div class="header-xp-pill" style="display:inline-flex; margin-top:2px;">
+                      <i data-lucide="zap" size="12" color="#f8c662" fill="#f8c662"></i>
+                      <span>1.420 XP</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3 Stats -->
+                <div class="profile-stats-row">
+                  <div class="profile-stat-box">
+                    <div style="width:28px; height:28px; border-radius:8px; background:#443475; margin:0 auto 4px auto; display:flex; align-items:center; justify-content:center;">
+                      <i data-lucide="target" size="15" color="#ae9aff"></i>
+                    </div>
+                    <div style="font-size:8px; font-weight:800; color:#a399bf;">MISSÕES</div>
+                    <div style="font-size:13px; font-weight:800; color:#fff;">18</div>
+                  </div>
+
+                  <div class="profile-stat-box">
+                    <div style="width:28px; height:28px; border-radius:8px; background:#55472a; margin:0 auto 4px auto; display:flex; align-items:center; justify-content:center;">
+                      <i data-lucide="trophy" size="15" color="#f6c768"></i>
+                    </div>
+                    <div style="font-size:8px; font-weight:800; color:#a399bf;">BADGES</div>
+                    <div style="font-size:13px; font-weight:800; color:#fff;">04</div>
+                  </div>
+
+                  <div class="profile-stat-box">
+                    <div style="width:28px; height:28px; border-radius:8px; background:#55304c; margin:0 auto 4px auto; display:flex; align-items:center; justify-content:center;">
+                      <i data-lucide="flame" size="15" color="#ff9b73" fill="#ff9b73"></i>
+                    </div>
+                    <div style="font-size:8px; font-weight:800; color:#a399bf;">STREAK</div>
+                    <div style="font-size:13px; font-weight:800; color:#fff;">12</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Badges Section -->
+              <div style="font-size:14px; font-weight:800; color:#fff; margin-bottom:8px;">Suas Conquistas</div>
+
+              <div class="badge-official-card">
+                <div style="width:36px; height:36px; border-radius:12px; background:#4c2882; display:flex; align-items:center; justify-content:center;">
+                  <i data-lucide="award" size="20" color="#c4b2ff"></i>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:12px; font-weight:800; color:#fff;">Primeiro Desafio</div>
+                  <div style="font-size:9.5px; color:#a399bf;">Concluiu a primeira fase de ADS</div>
+                </div>
+                <i data-lucide="shield-check" size="18" color="#4ade80"></i>
+              </div>
+
+              <div class="badge-official-card">
+                <div style="width:36px; height:36px; border-radius:12px; background:#3a4a28; display:flex; align-items:center; justify-content:center;">
+                  <i data-lucide="flame" size="20" color="#a3e635"></i>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:12px; font-weight:800; color:#fff;">Fogo nos Estudos</div>
+                  <div style="font-size:9.5px; color:#a399bf;">10 dias consecutivos de treino</div>
+                </div>
+                <i data-lucide="shield-check" size="18" color="#4ade80"></i>
+              </div>
+
+              <button class="logout-official-btn">
+                <i data-lucide="log-out" size="16"></i>
+                <span>Sair da Conta</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Official MenuNavegacao.tsx -->
+          <div class="official-bottom-nav">
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="home" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Início</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="layout-grid" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Trilhas</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox">
+                <i data-lucide="trophy" size="18" color="#9184aa"></i>
+              </div>
+              <span class="official-nav-label">Ranking</span>
+            </div>
+            <div class="official-nav-item">
+              <div class="official-nav-iconbox active">
+                <i data-lucide="user" size="18" color="#fff"></i>
+              </div>
+              <span class="official-nav-label active">Perfil</span>
+            </div>
+          </div>
+
+          <div class="phone-home-indicator"></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- POP-UP INSPECTOR & CODE VIEWER MODAL -->
+  <div id="inspector-overlay" class="screen-inspector-overlay" onclick="closeInspectorOnBackdrop(event)">
+    <div class="inspector-modal">
+      <div class="inspector-header">
+        <div class="inspector-title-box">
+          <div id="insp-icon-box" class="inspector-icon-pill">
+            <i data-lucide="code" size="20" color="#fff"></i>
+          </div>
+          <div>
+            <div id="insp-title" class="inspector-screen-name">Tela</div>
+            <div id="insp-path" class="inspector-file-path">src/screens/...</div>
+          </div>
+        </div>
+        <button class="inspector-close-btn" onclick="closeInspector()">
+          <i data-lucide="x" size="18"></i>
+        </button>
+      </div>
+
+      <div class="inspector-body">
+        <div id="insp-desc" class="inspector-desc-card">
+          Descrição da tela...
+        </div>
+
+        <div class="inspector-btn-row">
+          <button id="toggle-code-btn" class="code-action-btn" onclick="toggleCodeView()">
+            <i data-lucide="file-code-2" size="16"></i>
+            <span id="toggle-code-text">Ver Código-Fonte da Tela</span>
+          </button>
+          <button class="code-action-btn secondary" onclick="focusCurrentScreen()">
+            <i data-lucide="zoom-in" size="16"></i>
+            <span>Focar no Quadro</span>
+          </button>
+          <button id="copy-btn" class="code-action-btn secondary" onclick="copySourceCode()" style="display:none;">
+            <i data-lucide="copy" size="16"></i>
+            <span>Copiar Código</span>
+          </button>
+        </div>
+
+        <div id="code-container" class="code-container">
+          <div class="code-top-bar">
+            <span id="code-filename">arquivo.tsx</span>
+            <span style="color:#4ade80;">● React Native TypeScript</span>
+          </div>
+          <pre id="code-pre" class="code-pre"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zoom Controls -->
+  <div class="zoom-controls">
+    <button class="zoom-btn" onclick="zoomChange(-0.15)">
+      <i data-lucide="minus" size="16"></i>
+    </button>
+    <div id="zoom-text" style="font-size:11px; font-family:'JetBrains Mono',monospace; color:#c4b5fd; padding:0 8px; min-width:50px; text-align:center;">55%</div>
+    <button class="zoom-btn" onclick="zoomChange(0.15)">
+      <i data-lucide="plus" size="16"></i>
+    </button>
+    <button class="zoom-btn" onclick="resetZoom()">
+      <i data-lucide="rotate-ccw" size="14"></i>
+    </button>
+  </div>
+
+  <!-- MiniMap -->
+  <div class="minimap-container" id="minimap">
+    <div style="font-size:9.5px; font-weight:800; color:#a855f7; margin-bottom:4px; display:flex; justify-content:space-between;">
+      <span>MINI-MAP</span>
+      <span>7 TELAS</span>
+    </div>
+    <div style="position:relative; width:100%; height:94px; background:rgba(0,0,0,0.35); border-radius:6px;" id="minimap-canvas"></div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Data store for screen details and real source code snippets
+    const screenData = {
+      splash: {
+        id: 'node-splash',
+        title: 'Tela de Carregamento (Splash)',
+        file: 'GameByteMobile/src/screens/TelaCarregamento.tsx',
+        desc: 'Tela inicial exibida na abertura do app. Renderiza um anel infinito em rotação contínua (Animated.loop) envolvendo o logo da GameByte por 2.2 segundos (duration: 2200ms) antes de liberar o estado de carregamento no AppContext.',
+        code: `import React, { useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Image, Animated, Easing, StatusBar, SafeAreaView, Platform } from "react-native";
+
+const logoImage = require("../../assets/logo_clean_transparent.png");
+
+interface TelaCarregamentoProps {
+  mensagem?: string;
+  onFinish?: () => void;
+  duration?: number;
+}
+
+export function TelaCarregamento({
+  mensagem = "Carregando...",
+  onFinish,
+  duration = 2000,
+}: TelaCarregamentoProps) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+
+    const spinLoop = Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1400,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spinLoop.start();
+
+    let timer: ReturnType<typeof setTimeout>;
+    if (onFinish) {
+      timer = setTimeout(() => { onFinish(); }, duration);
+    }
+    return () => { spinLoop.stop(); if (timer) clearTimeout(timer); };
+  }, []);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#160d2e" translucent={false} />
+      <Animated.View style={[styles.contentBox, { opacity: fadeAnim }]}>
+        <View style={styles.loaderCircleContainer}>
+          <View style={styles.spinnerTrack} />
+          <Animated.View style={[styles.spinningRing, { transform: [{ rotate: spin }] }]} />
+          <View style={styles.logoBox}>
+            <Image source={logoImage} style={styles.logoImage} resizeMode="contain" />
+          </View>
+        </View>
+        <Text style={styles.loadingText}>{mensagem}</Text>
+      </Animated.View>
+    </SafeAreaView>
+  );
+}`
+      },
+      login: {
+        id: 'node-login',
+        title: 'Tela de Autenticação (Login)',
+        file: 'GameByteMobile/src/screens/TelaLogin.tsx',
+        desc: 'Tela de login institucional com SSO Google. Apresenta o card superior em degradê ["#754fdf", "#5535b7", "#2c165d"] com mascote oficial 3D, slogan institucional e gatilho de autenticação que altera isLoggedIn no AppContext.',
+        code: `import React, { useState } from "react";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Lock } from "lucide-react-native";
+import { useApp } from "../context/AppContext";
+
+const mascotImage = require("../../assets/mascote_transparent.png");
+const appIconImage = require("../../assets/logo_clean_transparent.png");
+
+export function TelaLogin() {
+  const { login } = useApp();
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = () => {
+    login();
+  };
+
+  return (
+    <View style={styles.rootContainer}>
+      <View style={styles.glowTop} pointerEvents="none" />
+      <View style={styles.glowBottom} pointerEvents="none" />
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.cardContainer}>
+          {/* Top Hero Section */}
+          <LinearGradient
+            colors={["#754fdf", "#5535b7", "#2c165d"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroSection}
+          >
+            <View style={styles.logoRow}>
+              <View style={styles.logoIconBox}>
+                <Image source={appIconImage} style={styles.logoIcon} resizeMode="cover" />
+              </View>
+              <Text style={styles.logoText}>GameByte</Text>
+            </View>
+
+            <View style={styles.heroTextContainer}>
+              <Text style={styles.tagline}>SEU GAME DE APRENDIZADO</Text>
+              <Text style={styles.heroTitle}>
+                Aprender pode ser o seu melhor <Text style={styles.highlightText}>jogo.</Text>
+              </Text>
+              <Text style={styles.heroDescription} numberOfLines={3}>
+                Domine habilidades, conclua missões e suba no ranking com a sua turma.
+              </Text>
+            </View>
+
+            <View style={styles.mascotBox} pointerEvents="none">
+              <Image source={mascotImage} style={styles.mascotImage} resizeMode="contain" />
+            </View>
+          </LinearGradient>
+
+          {/* Bottom Form Section */}
+          <View style={styles.formSection}>
+            <Text style={styles.welcomeBadge}>BOAS-VINDAS</Text>
+            <Text style={styles.formTitle}>Entre e continue sua jornada.</Text>
+            <Text style={styles.formSubtitle}>
+              Use a sua conta institucional para acessar suas trilhas e seu progresso.
+            </Text>
+
+            <TouchableOpacity style={styles.googleButton} onPress={handleLogin} activeOpacity={0.85}>
+              <View style={styles.googleIconBadge}><Text style={styles.googleIconLetter}>G</Text></View>
+              <Text style={styles.googleButtonText}>Continuar com Google</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ACESSO SEGURO</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.securityCard}>
+              <Lock size={15} color="#b5a2ff" />
+              <Text style={styles.securityText}>
+                Ao entrar, você concorda com os termos de uso e a política de privacidade do GameByte.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}`
+      },
+      home: {
+        id: 'node-home',
+        title: 'Tela Início (Home & Dashboard)',
+        file: 'GameByteMobile/src/screens/TelaInicio.tsx',
+        desc: 'Painel principal do aluno. Exibe o Cabecalho oficial com XP (1.420), o hero card de boas-vindas com mascote, métricas de engajamento (Sequência de 12 dias, XP Total, Posição #18) e atalho para o Mapa de Carreira.',
+        code: `import React from "react";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Flame, Zap, Trophy, Compass, Award } from "lucide-react-native";
+import { useApp } from "../context/AppContext";
+
+export function TelaInicio() {
+  const { totalXp, setCurrentTab, setSelectedTrackId } = useApp();
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      {/* 1. Hero Card */}
+      <LinearGradient colors={["#5e3ed2", "#3d277f", "#2c165d"]} style={styles.heroCard}>
+        <View style={styles.heroTextContainer}>
+          <Text style={styles.heroDate}>QUINTA · 21 DE AGOSTO</Text>
+          <Text style={styles.heroTitle}>Bom te ver de volta,\nMarina <Text style={styles.heroSparkle}>✦</Text></Text>
+        </View>
+        <Image source={require("../../assets/mascote_transparent.png")} style={styles.heroMascot} />
+      </LinearGradient>
+
+      {/* 2. Three Stat Badges */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <Flame size={16} color="#ff9b73" fill="#ff9b73" />
+          <Text style={styles.statLabel}>SEQUÊNCIA</Text>
+          <Text style={styles.statValue}>12 dias</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Zap size={16} color="#f6c768" fill="#f6c768" />
+          <Text style={styles.statLabel}>XP TOTAL</Text>
+          <Text style={styles.statValue}>{totalXp.toLocaleString("pt-BR")}</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Trophy size={16} color="#ae9aff" />
+          <Text style={styles.statLabel}>POSIÇÃO</Text>
+          <Text style={styles.statValue}>#18</Text>
+        </View>
+      </View>
+
+      {/* 3. Challenge Card */}
+      <LinearGradient colors={["#4d2daa", "#2a1367", "#120531"]} style={styles.challengeCard}>
+        <Text style={styles.challengeBadge}>💡 MAPA DE CARREIRA</Text>
+        <Text style={styles.challengeTitle}>Pronto para escolher sua trilha profissionalizante?</Text>
+        <TouchableOpacity style={styles.challengeButton} onPress={() => { setSelectedTrackId(null); setCurrentTab("tracks"); }}>
+          <Compass size={14} color="#200e54" />
+          <Text style={styles.challengeButtonText}>Explorar Trilhas</Text>
+        </TouchableOpacity>
+      </LinearGradient>
+    </ScrollView>
+  );
+}`
+      },
+      tracks: {
+        id: 'node-tracks',
+        title: 'Catálogo de Trilhas',
+        file: 'GameByteMobile/src/screens/TelaTrilhas.tsx',
+        desc: 'Catálogo oficial de trilhas dividido entre Fundamentais (Lógica, Python, Redes, Web) e Profissionalizantes (Full Stack, Cibersegurança, Cloud, IA) com bloqueio inteligente por pré-requisitos.',
+        code: `// TelaTrilhas.tsx (Trecho do Catálogo)
+export function TelaTrilhas() {
+  const { selectedTrackId, setSelectedTrackId, isTrackUnlocked, getTrackProgress } = useApp();
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  return (
+    <View style={styles.headerBlock}>
+      <Text style={styles.headerTagline}>SEU MAPA DE CARREIRA TECH</Text>
+      <Text style={styles.headerTitle}>Trilhas & Especializações.</Text>
+      
+      {/* Category Filter */}
+      <View style={styles.filterRow}>
+        <TouchableOpacity onPress={() => setActiveFilter("all")}><Text>Todas</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveFilter("professional")}><Text>Profissionalizantes</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveFilter("fundamental")}><Text>Fundamentos</Text></TouchableOpacity>
+      </View>
+
+      {/* Cards List */}
+      {tracksData.map((track) => (
+        <LinearGradient key={track.id} colors={track.gradient} style={styles.trackCard}>
+          <Text style={styles.trackName}>{track.name}</Text>
+          <Text style={styles.trackXp}>{track.xp}</Text>
+          <TouchableOpacity onPress={() => setSelectedTrackId(track.id)}>
+            <Text>Continuar Trilha</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      ))}
+    </View>
+  );
+}`
+      },
+      stagemap: {
+        id: 'node-stagemap',
+        title: 'Mapa de Fases da Trilha (Snake Trail)',
+        file: 'GameByteMobile/src/screens/TelaTrilhas.tsx',
+        desc: 'Mapa vertical sinuoso em zig-zag com nós circulares de fases. Permite abrir o Guia de Estudos e iniciar o Quiz interativo de cada fase.',
+        code: `// TelaTrilhas.tsx (Trecho do Mapa Snake)
+{(trackStagesData[selectedTrackId] || []).map((stage, idx) => {
+  const currentUnlocked = unlockedStages[selectedTrackId] || 1;
+  const isCompleted = stage.id < currentUnlocked;
+  const isCurrent = stage.id === currentUnlocked;
+  const isLocked = stage.id > currentUnlocked;
+
+  const offset = 35;
+  let horizontalOffset = 0;
+  if (idx % 4 === 1) horizontalOffset = -offset;
+  if (idx % 4 === 3) horizontalOffset = offset;
+
+  return (
+    <View key={stage.id} style={{ transform: [{ translateX: horizontalOffset }] }}>
+      <TouchableOpacity
+        style={[
+          styles.trailNodeButton,
+          isCompleted && styles.trailNodeCompleted,
+          isCurrent && styles.trailNodeCurrent,
+          isLocked && styles.trailNodeLocked,
+        ]}
+        onPress={() => handleStageClick(stage)}
+      >
+        {isCompleted && <Check size={24} color="#ffffff" />}
+        {isCurrent && <Star size={24} color="#fbbf24" />}
+        {isLocked && <Lock size={18} color="#6d5e94" />}
+      </TouchableOpacity>
+      <Text style={styles.stageTitle}>{stage.title}</Text>
+    </View>
+  );
+})}`
+      },
+      quiz: {
+        id: 'node-quizmodal',
+        title: 'Atividade & Quiz da Fase (Modal)',
+        file: 'GameByteMobile/src/screens/TelaTrilhas.tsx (Modal)',
+        desc: 'Modal interativo de estudos e desafios técnicos. Apresenta o enunciado, opções de múltipla escolha (A, B, C, D), validação de acerto em tempo real e recompensa imediata em XP no perfil do aluno.',
+        code: `// TelaTrilhas.tsx (Modal de Desafio)
+<Modal visible={!!activeStage} transparent animationType="fade">
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalCard}>
+      {/* Tabs */}
+      <View style={styles.modalTabsRow}>
+        <TouchableOpacity onPress={() => setModalTab("study")}><Text>Guia de Estudo</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => setModalTab("quiz")}><Text>Desafio (+{activeStage.xp} XP)</Text></TouchableOpacity>
+      </View>
+
+      {/* Quiz Question */}
+      <View style={styles.quizBox}>
+        <Text style={styles.questionText}>{currentQuestion.question}</Text>
+        {currentQuestion.options.map((option, idx) => (
+          <TouchableOpacity
+            key={idx}
+            style={[styles.optionCard, selectedOption === option && styles.optionSelected]}
+            onPress={() => setSelectedOption(option)}
+          >
+            <Text>{option}</Text>
+          </TouchableOpacity>
+        ))}
+
+        <TouchableOpacity style={styles.submitBtn} onPress={handleAnswerSubmit}>
+          <Text>Confirmar Resposta</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>`
+      },
+      ranking: {
+        id: 'node-ranking',
+        title: 'Tela de Ranking (Classificação ADS)',
+        file: 'GameByteMobile/src/screens/TelaRanking.tsx',
+        desc: 'Pódio dos 3 melhores alunos da semana com coroa dourada, pedestais em gradiente metálico, listagem dos colegas de turma e card fixo com o progresso individual da aluna logada (#18 Marina Silva).',
+        code: `import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { Crown } from "lucide-react-native";
+import { leaderboardData } from "../data/mockData";
+import { useApp } from "../context/AppContext";
+
+export function TelaRanking() {
+  const { totalXp } = useApp();
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.headerBlock}>
+        <Text style={styles.headerTagline}>CLASSIFICAÇÃO ADS</Text>
+        <Text style={styles.headerTitle}>Ranking da galera.</Text>
+      </View>
+
+      {/* Podium 1st, 2nd, 3rd */}
+      <View style={styles.podiumContainer}>
+        {/* 2nd Place */}
+        <View style={styles.podiumCol}>
+          <Text>🥈</Text>
+          <View style={styles.avatar}><Text>LM</Text></View>
+          <Text style={styles.name}>Lucas</Text>
+          <Text style={styles.xp}>2.140 XP</Text>
+          <View style={[styles.pedestal, { height: 85 }]}>2º</View>
+        </View>
+
+        {/* 1st Place */}
+        <View style={styles.podiumCol}>
+          <Crown size={24} color="#f5c463" fill="#f5c463" />
+          <View style={[styles.avatar, styles.first]}><Text>EG</Text></View>
+          <Text style={styles.name}>Enzo</Text>
+          <Text style={[styles.xp, { color: '#ffd700' }]}>2.450 XP</Text>
+          <View style={[styles.pedestal, { height: 115 }]}>1º</View>
+        </View>
+
+        {/* 3rd Place */}
+        <View style={styles.podiumCol}>
+          <Text>🥉</Text>
+          <View style={styles.avatar}><Text>CR</Text></View>
+          <Text style={styles.name}>Camila</Text>
+          <Text style={styles.xp}>1.890 XP</Text>
+          <View style={[styles.pedestal, { height: 65 }]}>3º</View>
+        </View>
+      </View>
+
+      {/* User Position Highlight */}
+      <View style={styles.highlightCard}>
+        <Text style={styles.highlightRank}>#18</Text>
+        <Text style={styles.highlightName}>Marina Silva (Você)</Text>
+        <Text style={styles.highlightXp}>{totalXp} XP</Text>
+      </View>
+    </ScrollView>
+  );
+}`
+      },
+      profile: {
+        id: 'node-profile',
+        title: 'Tela de Perfil (Conquistas & Stats)',
+        file: 'GameByteMobile/src/screens/TelaPerfil.tsx',
+        desc: 'Perfil acadêmico da estudante contendo avatar grande M, turma Bootcamp ADS 2026.2, contadores de missões e streak, lista de conquistas/badges e botão de encerramento de sessão.',
+        code: `import React from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { Zap, Target, Trophy, Flame, LogOut, Award, ShieldCheck } from "lucide-react-native";
+import { useApp } from "../context/AppContext";
+
+export function TelaPerfil() {
+  const { totalXp, logout } = useApp();
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.profileCard}>
+        <View style={styles.avatarLarge}><Text style={styles.avatarLargeText}>M</Text></View>
+        <Text style={styles.userName}>Marina Silva</Text>
+        <Text style={styles.userRole}>Bootcamp ADS · Turma 2026.2</Text>
+        
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}><Target size={16} /><Text>18</Text></View>
+          <View style={styles.statBox}><Trophy size={16} /><Text>04</Text></View>
+          <View style={styles.statBox}><Flame size={16} /><Text>12</Text></View>
+        </View>
+      </View>
+
+      <Text style={styles.sectionTitle}>Suas Conquistas</Text>
+      <View style={styles.badgeCard}>
+        <Award size={20} color="#c4b2ff" />
+        <Text style={styles.badgeName}>Primeiro Desafio</Text>
+        <ShieldCheck size={18} color="#4ade80" />
+      </View>
+
+      <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+        <LogOut size={16} color="#f87171" />
+        <Text style={styles.logoutText}>Sair da Conta</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}`
+      }
+    };
+
+    let currentActiveKey = 'login';
+    let codeViewOpen = false;
+
+    function openInspector(key) {
+      const data = screenData[key];
+      if (!data) return;
+      currentActiveKey = key;
+
+      document.getElementById('insp-title').innerText = data.title;
+      document.getElementById('insp-path').innerText = data.file;
+      document.getElementById('insp-desc').innerText = data.desc;
+      document.getElementById('code-filename').innerText = data.file.split('/').pop();
+      document.getElementById('code-pre').innerText = data.code;
+
+      codeViewOpen = false;
+      document.getElementById('code-container').classList.remove('visible');
+      document.getElementById('toggle-code-text').innerText = 'Ver Código-Fonte da Tela';
+      document.getElementById('copy-btn').style.display = 'none';
+
+      const overlay = document.getElementById('inspector-overlay');
+      overlay.classList.add('active');
+    }
+
+    function closeInspector() {
+      document.getElementById('inspector-overlay').classList.remove('active');
+    }
+
+    function closeInspectorOnBackdrop(e) {
+      if (e.target.id === 'inspector-overlay') {
+        closeInspector();
+      }
+    }
+
+    function toggleCodeView() {
+      codeViewOpen = !codeViewOpen;
+      const container = document.getElementById('code-container');
+      const text = document.getElementById('toggle-code-text');
+      const copyBtn = document.getElementById('copy-btn');
+
+      if (codeViewOpen) {
+        container.classList.add('visible');
+        text.innerText = 'Ocultar Código-Fonte';
+        copyBtn.style.display = 'flex';
+      } else {
+        container.classList.remove('visible');
+        text.innerText = 'Ver Código-Fonte da Tela';
+        copyBtn.style.display = 'none';
+      }
+    }
+
+    function focusCurrentScreen() {
+      closeInspector();
+      const data = screenData[currentActiveKey];
+      if (data) {
+        focusNode(data.id);
+      }
+    }
+
+    function copySourceCode() {
+      const data = screenData[currentActiveKey];
+      if (!data) return;
+      navigator.clipboard.writeText(data.code).then(() => {
+        const copyBtn = document.getElementById('copy-btn');
+        copyBtn.innerHTML = '<i data-lucide="check" size="16"></i><span>Copiado!</span>';
+        lucide.createIcons();
+        setTimeout(() => {
+          copyBtn.innerHTML = '<i data-lucide="copy" size="16"></i><span>Copiar Código</span>';
+          lucide.createIcons();
+        }, 2000);
+      });
+    }
+
+    // Canvas State
+    let scale = 0.44;
+    let panX = 40;
+    let panY = 30;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    const viewport = document.getElementById('viewport');
+    const world = document.getElementById('canvas-world');
+    const zoomText = document.getElementById('zoom-text');
+
+    function updateTransform() {
+      world.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      zoomText.innerText = `${Math.round(scale * 100)}%`;
+      drawCurves();
+      updateMiniMap();
+    }
+
+    function zoomChange(delta) {
+      const newScale = Math.min(Math.max(0.18, scale + delta), 1.6);
+      const zoomRatio = newScale / scale;
+      const rect = viewport.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      panX = centerX - (centerX - panX) * zoomRatio;
+      panY = centerY - (centerY - panY) * zoomRatio;
+      scale = newScale;
+      updateTransform();
+    }
+
+    function resetZoom() {
+      scale = 0.46;
+      panX = 50;
+      panY = 40;
+      updateTransform();
+    }
+
+    viewport.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.floating-pres-btn') || e.target.closest('.zoom-btn') || e.target.closest('.inspector-modal')) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      viewport.classList.add('dragging');
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      viewport.classList.remove('dragging');
+    });
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
+      const newScale = Math.min(Math.max(0.18, scale + zoomDelta), 1.6);
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      const zoomRatio = newScale / scale;
+      panX = mouseX - (mouseX - panX) * zoomRatio;
+      panY = mouseY - (mouseY - panY) * zoomRatio;
+      scale = newScale;
+      updateTransform();
+    }, { passive: false });
+
+    function getElementAnchor(id, position = 'right') {
+      const el = document.getElementById(id);
+      if (!el) return { x: 0, y: 0 };
+      const left = parseFloat(el.style.left) || 0;
+      const top = parseFloat(el.style.top) || 0;
+      const width = el.offsetWidth || 375;
+      const height = el.offsetHeight || 760;
+
+      if (position === 'right') return { x: left + width, y: top + height / 2 };
+      if (position === 'left') return { x: left, y: top + height / 2 };
+      if (position === 'top') return { x: left + width / 2, y: top };
+      if (position === 'bottom') return { x: left + width / 2, y: top + height };
+      return { x: left + width / 2, y: top + height / 2 };
+    }
+
+    function createBezier(p1, p2, bend = 120) {
+      const dx = p2.x - p1.x;
+      const cx1 = p1.x + Math.max(bend, dx * 0.5);
+      const cy1 = p1.y;
+      const cx2 = p2.x - Math.max(bend, dx * 0.5);
+      const cy2 = p2.y;
+      return {
+        d: `M ${p1.x} ${p1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p2.x} ${p2.y}`,
+        midX: (p1.x + p2.x) / 2,
+        midY: (p1.y + p2.y) / 2
+      };
+    }
+
+    function drawCurves() {
+      // 1. Splash -> Login
+      const pSplash = getElementAnchor('node-splash', 'right');
+      const pLogin = getElementAnchor('node-login', 'left');
+      const c1 = createBezier(pSplash, pLogin, 90);
+      document.getElementById('path-splash-login').setAttribute('d', c1.d);
+      positionBadge('badge-1', c1.midX, c1.midY);
+
+      // 2. Login -> Home
+      const pLoginR = getElementAnchor('node-login', 'right');
+      const pHomeL = getElementAnchor('node-home', 'left');
+      const c2 = createBezier(pLoginR, pHomeL, 90);
+      document.getElementById('path-login-home').setAttribute('d', c2.d);
+      positionBadge('badge-2', c2.midX, c2.midY);
+
+      // 3. Home -> Tracks Catalog
+      const pHomeR = getElementAnchor('node-home', 'right');
+      const pTracksL = getElementAnchor('node-tracks', 'left');
+      const c3 = createBezier(pHomeR, pTracksL, 140);
+      document.getElementById('path-home-tracks').setAttribute('d', c3.d);
+      positionBadge('badge-3', c3.midX - 20, c3.midY - 10);
+
+      // 4. Tracks Catalog -> Stage Map
+      const pTracksR = getElementAnchor('node-tracks', 'right');
+      const pStageL = getElementAnchor('node-stagemap', 'left');
+      const c4 = createBezier(pTracksR, pStageL, 90);
+      document.getElementById('path-tracks-map').setAttribute('d', c4.d);
+      positionBadge('badge-4', c4.midX, c4.midY);
+
+      // 5. Stage Map -> Quiz Modal
+      const pStageR = getElementAnchor('node-stagemap', 'right');
+      const pQuizL = getElementAnchor('node-quizmodal', 'left');
+      const c5 = createBezier(pStageR, pQuizL, 90);
+      document.getElementById('path-map-quiz').setAttribute('d', c5.d);
+      positionBadge('badge-5', c5.midX, c5.midY);
+
+      // 6. Home -> Ranking
+      const pRankingL = getElementAnchor('node-ranking', 'left');
+      const c6 = createBezier(pHomeR, pRankingL, 140);
+      document.getElementById('path-home-ranking').setAttribute('d', c6.d);
+      positionBadge('badge-6', c6.midX - 20, c6.midY);
+
+      // 7. Home -> Profile
+      const pProfileL = getElementAnchor('node-profile', 'left');
+      const c7 = createBezier(pHomeR, pProfileL, 140);
+      document.getElementById('path-home-profile').setAttribute('d', c7.d);
+      positionBadge('badge-7', c7.midX - 20, c7.midY + 10);
+    }
+
+    function positionBadge(badgeId, x, y) {
+      const badge = document.getElementById(badgeId);
+      if (badge) {
+        badge.style.left = `${x}px`;
+        badge.style.top = `${y}px`;
+      }
+    }
+
+    function focusNode(nodeId) {
+      const el = document.getElementById(nodeId);
+      if (!el) return;
+      const left = parseFloat(el.style.left) || 0;
+      const top = parseFloat(el.style.top) || 0;
+      const rect = viewport.getBoundingClientRect();
+
+      scale = 0.90;
+      panX = rect.width / 2 - (left + 187) * scale;
+      panY = rect.height / 2 - (top + 380) * scale;
+      updateTransform();
+    }
+
+    const steps = ['node-splash', 'node-login', 'node-home', 'node-tracks', 'node-stagemap', 'node-quizmodal', 'node-ranking', 'node-profile'];
+    let curStep = 0;
+
+    function startPresentation() {
+      curStep = 0;
+      focusNode(steps[curStep]);
+      showStepToast(`Passo 1/8: ${document.getElementById(steps[curStep]).querySelector('.node-name').innerText}`);
+    }
+
+    function nextStep() {
+      curStep = (curStep + 1) % steps.length;
+      focusNode(steps[curStep]);
+      showStepToast(`Passo ${curStep + 1}/8: ${document.getElementById(steps[curStep]).querySelector('.node-name').innerText}`);
+    }
+
+    function showStepToast(msg) {
+      let toast = document.getElementById('pres-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'pres-toast';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 84px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(117, 79, 223, 0.95);
+          color: white;
+          padding: 10px 20px;
+          border-radius: 30px;
+          font-size: 13px;
+          font-weight: 700;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+          z-index: 200;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        `;
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `
+        <span>${msg}</span>
+        <button onclick="nextStep()" style="background:white; color:#5b21b6; border:none; border-radius:20px; padding:4px 12px; font-weight:800; cursor:pointer; font-size:11px;">Próximo ➔</button>
+      `;
+    }
+
+    function updateMiniMap() {
+      const miniCanvas = document.getElementById('minimap-canvas');
+      if (!miniCanvas) return;
+      miniCanvas.innerHTML = '';
+
+      const worldW = 3900;
+      const worldH = 2800;
+      const mapW = miniCanvas.offsetWidth;
+      const mapH = miniCanvas.offsetHeight;
+
+      document.querySelectorAll('.screen-node').forEach(node => {
+        const left = (parseFloat(node.style.left) / worldW) * mapW;
+        const top = (parseFloat(node.style.top) / worldH) * mapH;
+        const mini = document.createElement('div');
+        mini.className = 'minimap-screen';
+        mini.style.cssText = `left:${left}px; top:${top}px; width:12px; height:24px;`;
+        miniCanvas.appendChild(mini);
+      });
+
+      const vpRect = viewport.getBoundingClientRect();
+      const vpLeft = ((-panX / scale) / worldW) * mapW;
+      const vpTop = ((-panY / scale) / worldH) * mapH;
+      const vpWidth = ((vpRect.width / scale) / worldW) * mapW;
+      const vpHeight = ((vpRect.height / scale) / worldH) * mapH;
+
+      const vpBox = document.createElement('div');
+      vpBox.className = 'minimap-vp-box';
+      vpBox.style.cssText = `
+        left: ${Math.max(0, vpLeft)}px;
+        top: ${Math.max(0, vpTop)}px;
+        width: ${Math.min(mapW, vpWidth)}px;
+        height: ${Math.min(mapH, vpHeight)}px;
+      `;
+      miniCanvas.appendChild(vpBox);
+    }
+
+    window.addEventListener('load', () => { resetZoom(); });
+    window.addEventListener('resize', () => { drawCurves(); updateMiniMap(); });
+  </script>
+</body>
+</html>

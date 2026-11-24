@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
-import { Track } from "../types";
+import { Track, LevelInfo } from "../types";
+import { getLevelInfo } from "../data/mockData";
 
 export type ScreenTab = "home" | "tracks" | "ranking" | "profile";
 
@@ -17,6 +18,16 @@ interface AppContextType {
   setSelectedTrackId: (trackId: string | null) => void;
   totalXp: number;
   addXp: (amount: number) => void;
+  levelInfo: LevelInfo;
+  selectedAvatarId: number | null;
+  setSelectedAvatarId: (id: number) => void;
+  lives: number;
+  maxLives: number;
+  loseLife: (amount?: number) => boolean;
+  rechargeLives: () => void;
+  rechargeHoursRemaining: string;
+  showOutOfLivesModal: boolean;
+  setShowOutOfLivesModal: (show: boolean) => void;
   unlockedStages: Record<string, number>;
   unlockNextStage: (trackId: string, currentStageId: number) => void;
   getTrackProgress: (trackId: string) => number;
@@ -32,7 +43,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loadingMessage, setLoadingMessage] = useState("Iniciando o GameByte...");
   const [currentTab, setCurrentTab] = useState<ScreenTab>("home");
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-  const [totalXp, setTotalXp] = useState(1240);
+  const [totalXp, setTotalXp] = useState(1500); // Começa com 1.500 XP (exemplo do usuário!)
+  const [selectedAvatarId, setSelectedAvatarId] = useState<number | null>(null);
+  const [lives, setLives] = useState(3.0); // 3 Corações cheios
+  const maxLives = 3.0;
+  const [showOutOfLivesModal, setShowOutOfLivesModal] = useState(false);
+  const [rechargeHoursRemaining, setRechargeHoursRemaining] = useState("04h 00m");
   const [unlockedStages, setUnlockedStages] = useState<Record<string, number>>({
     network: 1,
     logic: 1,
@@ -42,6 +58,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     cloud: 1,
     ai: 1,
   });
+
+  const levelInfo = getLevelInfo(totalXp, selectedAvatarId);
 
   const setAppLoading = (loading: boolean, message = "Carregando...") => {
     setLoadingMessage(message);
@@ -69,6 +87,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addXp = (amount: number) => {
     setTotalXp((prev) => prev + amount);
+  };
+
+  const loseLife = (amount = 0.5) => {
+    let stillAlive = true;
+    setLives((prev) => {
+      const next = Math.max(0, Math.round((prev - amount) * 10) / 10);
+      if (next <= 0) {
+        stillAlive = false;
+        setShowOutOfLivesModal(true);
+      }
+      return next;
+    });
+    return stillAlive;
+  };
+
+  const rechargeLives = () => {
+    setLives(3.0);
+    setShowOutOfLivesModal(false);
   };
 
   const unlockNextStage = (trackId: string, currentStageId: number) => {
@@ -115,6 +151,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setSelectedTrackId,
         totalXp,
         addXp,
+        levelInfo,
+        selectedAvatarId,
+        setSelectedAvatarId,
+        lives,
+        maxLives,
+        loseLife,
+        rechargeLives,
+        rechargeHoursRemaining,
+        showOutOfLivesModal,
+        setShowOutOfLivesModal,
         unlockedStages,
         unlockNextStage,
         getTrackProgress,

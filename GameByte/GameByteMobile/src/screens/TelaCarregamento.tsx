@@ -7,7 +7,6 @@ import {
   Animated,
   Easing,
   StatusBar,
-  SafeAreaView,
   Platform,
 } from "react-native";
 
@@ -66,7 +65,7 @@ export function TelaCarregamento({
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#160d2e" translucent={false} />
 
       <Animated.View style={[styles.contentBox, { opacity: fadeAnim }]}>
@@ -98,7 +97,7 @@ export function TelaCarregamento({
         {/* Only "Carregando..." text below */}
         <Text style={styles.loadingText}>{mensagem}</Text>
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 

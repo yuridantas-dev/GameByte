@@ -1,4 +1,13 @@
-import { Track, TrackStage, QuizQuestion, LeaderboardUser } from "../types";
+import { Track, TrackStage, QuizQuestion, LeaderboardUser, Avatar3D, LevelInfo } from "../types";
+
+const avatarLevel1 = require("../../assets/avatar_level_1.jpg");
+const avatarLevel2 = require("../../assets/avatar_level_2.jpg");
+const avatarLevel3 = require("../../assets/avatar_level_3.jpg");
+const avatarLevel4 = require("../../assets/avatar_level_4.jpg");
+const avatarLevel5 = require("../../assets/avatar_level_5.jpg");
+const avatarLevel6 = require("../../assets/avatar_level_6.jpg");
+const avatarLevel7 = require("../../assets/avatar_level_7.jpg");
+const avatarLevel8 = require("../../assets/avatar_level_8.jpg");
 
 export const tracksData: Track[] = [
   // --- TRILHAS FUNDAMENTAIS (BÁSICAS) ---
@@ -1315,9 +1324,151 @@ export const quizQuestionsData: Record<string, Record<number, QuizQuestion[]>> =
 };
 
 export const leaderboardData: LeaderboardUser[] = [
-  { name: "João Victor", xp: "2.480", streak: 28, initials: "JV", tone: ["#fde1b7", "#c6805c"] },
-  { name: "Letícia Ramos", xp: "2.330", streak: 21, initials: "LR", tone: ["#c8defa", "#658cc5"] },
-  { name: "Carlos Eduardo", xp: "2.110", streak: 19, initials: "CE", tone: ["#e7c1cc", "#aa677b"] },
-  { name: "Ana Clara", xp: "1.970", streak: 17, initials: "AC", tone: ["#d6ccff", "#806ac3"] },
-  { name: "Rafael Nunes", xp: "1.860", streak: 15, initials: "RN", tone: ["#cde7db", "#4e997a"] },
+  { name: "João Victor", xp: "2.480", streak: 28, initials: "JV", tone: ["#fde1b7", "#c6805c"], level: 2, avatarId: 2 },
+  { name: "Letícia Ramos", xp: "2.330", streak: 21, initials: "LR", tone: ["#c8defa", "#658cc5"], level: 2, avatarId: 5 },
+  { name: "Carlos Eduardo", xp: "2.110", streak: 19, initials: "CE", tone: ["#e7c1cc", "#aa677b"], level: 2, avatarId: 3 },
+  { name: "Ana Clara", xp: "1.970", streak: 17, initials: "AC", tone: ["#d6ccff", "#806ac3"], level: 1, avatarId: 1 },
+  { name: "Rafael Nunes", xp: "1.860", streak: 15, initials: "RN", tone: ["#cde7db", "#4e997a"], level: 1, avatarId: 1 },
 ];
+
+export const XP_PER_LEVEL = 2000;
+
+export const avatars3DData: Avatar3D[] = [
+  {
+    id: 1,
+    levelRequired: 1,
+    name: "Byte Novato",
+    title: "Iniciante dos Algoritmos",
+    description: "Robô cibernético amigável projetado para guiar seus primeiros passos na programação.",
+    image: avatarLevel1,
+    tag: "Nível 1 (0 XP)",
+    accentColor: "#38bdf8",
+    borderGradient: ["#38bdf8", "#0284c7"],
+    perk: "+10% de Compreensão em Lógica",
+    lore: "Construído nos laboratórios do GameByte com circuitos de aprendizado rápido e visão holográfica para iniciantes.",
+  },
+  {
+    id: 2,
+    levelRequired: 2,
+    name: "Pixel Hacker",
+    title: "Explorador de Código",
+    description: "Ciborgue com visor holográfico AR e aceleração neural para decifrar problemas complexos.",
+    image: avatarLevel2,
+    tag: "Nível 2 (2.000 XP)",
+    accentColor: "#c084fc",
+    borderGradient: ["#c084fc", "#7e22ce"],
+    perk: "+15% de Velocidade em Quizzes",
+    lore: "Equipado com chips quânticos de depuração que detectam bugs antes mesmo da compilação.",
+  },
+  {
+    id: 3,
+    levelRequired: 3,
+    name: "Mestre Dev",
+    title: "Arquiteto de Sistemas",
+    description: "Engenheiro digital com armadura dourada e coroa de glifos holográficos flutuantes.",
+    image: avatarLevel3,
+    tag: "Nível 3 (4.000 XP)",
+    accentColor: "#facc15",
+    borderGradient: ["#fde047", "#ca8a04"],
+    perk: "+20% de XP em Desafios Chefão",
+    lore: "Forjou sua armadura compilando milhares de linhas de código limpo e arquiteturas escaláveis.",
+  },
+  {
+    id: 4,
+    levelRequired: 4,
+    name: "Nexus Supremo",
+    title: "Lenda Cibernética",
+    description: "Entidade cósmica com armadura de cristal e domínio quântico de arquitetura tech.",
+    image: avatarLevel4,
+    tag: "Nível 4 (6.000 XP)",
+    accentColor: "#34d399",
+    borderGradient: ["#34d399", "#059669"],
+    perk: "Aura de Foco Imbatível",
+    lore: "Habita o núcleo das redes quânticas, transformando dados brutos em soluções luminosas.",
+  },
+  {
+    id: 5,
+    levelRequired: 5,
+    name: "Cyber Valkyrie",
+    title: "Guardiã Cósmica Tech",
+    description: "Guerreira cibernética com asas de energia magenta e visor AR de alta precisão.",
+    image: avatarLevel5,
+    tag: "Nível 5 (8.000 XP)",
+    accentColor: "#f43f5e",
+    borderGradient: ["#fb7185", "#e11d48"],
+    perk: "+25% de Resistência e Vidas Extras",
+    lore: "Voo hipersônico pela nuvem de dados, protegendo repositórios contra ataques cibernéticos.",
+  },
+  {
+    id: 6,
+    levelRequired: 6,
+    name: "Glitch Samurai",
+    title: "Mestre dos Algoritmos",
+    description: "Ninja cibernético de fibra de carbono com lâminas holográficas e máscara LED.",
+    image: avatarLevel6,
+    tag: "Nível 6 (10.000 XP)",
+    accentColor: "#06b6d4",
+    borderGradient: ["#22d3ee", "#0891b2"],
+    perk: "Corte de Bugs Instantâneo",
+    lore: "Domina a arte do código silencioso e cirúrgico, capaz de refatorar sistemas inteiros num piscar de olhos.",
+  },
+  {
+    id: 7,
+    levelRequired: 7,
+    name: "Arquiteto Quântico",
+    title: "Oráculo Neural",
+    description: "Cientista biomecânico de esmeralda e ouro com orbe quântico e circuitos neurais.",
+    image: avatarLevel7,
+    tag: "Nível 7 (12.000 XP)",
+    accentColor: "#10b981",
+    borderGradient: ["#34d399", "#047857"],
+    perk: "Visão Preditiva de Testes Unitários",
+    lore: "Manipula probabilidades quânticas para antecipar qualquer falha de infraestrutura antes que ocorra.",
+  },
+  {
+    id: 8,
+    levelRequired: 8,
+    name: "Cyber Titã Supremo",
+    title: "Divindade da Matriz",
+    description: "A forma suprema de evolução tecnológica: armadura solar de platina e anel de plasma estelar.",
+    image: avatarLevel8,
+    tag: "Nível 8+ (14.000 XP)",
+    accentColor: "#fbbf24",
+    borderGradient: ["#fef08a", "#b45309"],
+    perk: "Mestria Absoluta de Toda a Computação",
+    lore: "Atingiu a transcendência digital completa, integrando hardware, software e inteligência cósmica.",
+  },
+];
+
+export function getLevelInfo(totalXp: number, selectedAvatarId?: number | null): LevelInfo {
+  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1;
+  const levelMinXp = (level - 1) * XP_PER_LEVEL;
+  const levelMaxXp = level * XP_PER_LEVEL;
+  const currentLevelXp = totalXp - levelMinXp;
+  const levelXpCap = XP_PER_LEVEL;
+  const progressPercent = Math.min(100, Math.max(0, Math.floor(((totalXp - levelMinXp) / (levelMaxXp - levelMinXp)) * 100)));
+  const nextLevelTotalXp = levelMaxXp;
+
+  const unlockedAvatars = avatars3DData.filter((a) => a.levelRequired <= level);
+
+  let currentAvatar = unlockedAvatars[unlockedAvatars.length - 1];
+  if (selectedAvatarId) {
+    const found = unlockedAvatars.find((a) => a.id === selectedAvatarId);
+    if (found) currentAvatar = found;
+  }
+
+  return {
+    level,
+    title: currentAvatar ? currentAvatar.title : "Programador",
+    totalXp,
+    levelMinXp,
+    levelMaxXp,
+    currentLevelXp,
+    levelXpCap,
+    progressPercent,
+    nextLevelTotalXp,
+    currentAvatar: currentAvatar || avatars3DData[0],
+    unlockedAvatars,
+    allAvatars: avatars3DData,
+  };
+}

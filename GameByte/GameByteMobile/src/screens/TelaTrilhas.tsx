@@ -32,10 +32,16 @@ import {
   BookOpen,
   Lightbulb,
   Terminal,
+  Bug,
+  RotateCcw,
+  CheckCircle,
+  AlertTriangle,
 } from "lucide-react-native";
 import { useApp } from "../context/AppContext";
 import { tracksData, trackStagesData, quizQuestionsData } from "../data/mockData";
 import { Track, TrackStage } from "../types";
+import { HeartDisplay } from "../components/HeartDisplay";
+import { getStageGameData, StageGameData, CodeBlock, BugHunterLine } from "../data/gameData";
 
 const { width: screenWidth } = Dimensions.get("window");
 const isSmallDevice = screenWidth < 375;
@@ -50,11 +56,31 @@ export function TelaTrilhas() {
     getTrackProgress,
     isTrackUnlocked,
     isTrackCompleted,
+    lives,
+    loseLife,
+    setShowOutOfLivesModal,
   } = useApp();
 
   const [activeFilter, setActiveFilter] = useState<"all" | "professional" | "fundamental">("all");
   const [activeStage, setActiveStage] = useState<TrackStage | null>(null);
   const [modalTab, setModalTab] = useState<"study" | "quiz">("study");
+
+  // Game Sub-modes: "puzzle" (Montar Código) | "bug" (Caça ao Bug) | "quiz" (Quiz)
+  const [gameSubMode, setGameSubMode] = useState<"puzzle" | "bug" | "quiz">("puzzle");
+
+  // Code Puzzle state
+  const [placedBlocks, setPlacedBlocks] = useState<CodeBlock[]>([]);
+  const [availableBlocks, setAvailableBlocks] = useState<CodeBlock[]>([]);
+  const [puzzleSubmitted, setPuzzleSubmitted] = useState(false);
+  const [puzzleSuccess, setPuzzleSuccess] = useState(false);
+  const [puzzleErrorMsg, setPuzzleErrorMsg] = useState<string | null>(null);
+
+  // Bug Hunter state
+  const [selectedBugLine, setSelectedBugLine] = useState<number | null>(null);
+  const [bugSolved, setBugSolved] = useState(false);
+  const [bugWrongFeedback, setBugWrongFeedback] = useState<string | null>(null);
+
+  // Quiz state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -63,6 +89,32 @@ export function TelaTrilhas() {
   const [quizSuccess, setQuizSuccess] = useState(false);
 
   const selectedTrack = tracksData.find((t) => t.id === selectedTrackId);
+  const stageGame =
+    activeStage && selectedTrackId
+      ? getStageGameData(selectedTrackId, activeStage.id, activeStage.title)
+      : null;
+
+  const initStageGames = (stage: TrackStage) => {
+    if (!selectedTrackId) return;
+    const game = getStageGameData(selectedTrackId, stage.id, stage.title);
+    const shuffled = [...game.puzzle.blocks].sort(() => Math.random() - 0.5);
+    setAvailableBlocks(shuffled);
+    setPlacedBlocks([]);
+    setPuzzleSubmitted(false);
+    setPuzzleSuccess(false);
+    setPuzzleErrorMsg(null);
+
+    setSelectedBugLine(null);
+    setBugSolved(false);
+    setBugWrongFeedback(null);
+
+    setCurrentQuestionIndex(0);
+    setCorrectCount(0);
+    setSelectedOption(null);
+    setAnswerSubmitted(false);
+    setQuizFinished(false);
+    setQuizSuccess(false);
+  };
 
   const getTrackIcon = (iconName: string) => {
     switch (iconName) {
@@ -92,24 +144,97 @@ export function TelaTrilhas() {
     }
     setActiveStage(stage);
     setModalTab("study");
-    setCurrentQuestionIndex(0);
-    setCorrectCount(0);
-    setSelectedOption(null);
-    setAnswerSubmitted(false);
-    setQuizFinished(false);
-    setQuizSuccess(false);
+    initStageGames(stage);
   };
 
   const handleStartChallenge = () => {
+    if (lives <= 0) {
+      setShowOutOfLivesModal(true);
+      return;
+    }
     setModalTab("quiz");
-    setCurrentQuestionIndex(0);
-    setCorrectCount(0);
-    setSelectedOption(null);
-    setAnswerSubmitted(false);
-    setQuizFinished(false);
-    setQuizSuccess(false);
   };
 
+  const handleTabChange = (tab: "study" | "quiz") => {
+    if (tab === "quiz" && lives <= 0) {
+      setShowOutOfLivesModal(true);
+      return;
+    }
+    setModalTab(tab);
+  };
+
+  // Puzzle Handlers
+  const handlePlaceBlock = (block: CodeBlock) => {
+    if (puzzleSuccess) return;
+    setAvailableBlocks((prev) => prev.filter((b) => b.id !== block.id));
+    setPlacedBlocks((prev) => [...prev, block]);
+    setPuzzleErrorMsg(null);
+  };
+
+  const handleRemoveBlock = (block: CodeBlock) => {
+    if (puzzleSuccess) return;
+    setPlacedBlocks((prev) => prev.filter((b) => b.id !== block.id));
+    setAvailableBlocks((prev) => [...prev, block]);
+    setPuzzleErrorMsg(null);
+  };
+
+  const handleResetPuzzle = () => {
+    if (!stageGame) return;
+    const shuffled = [...stageGame.puzzle.blocks].sort(() => Math.random() - 0.5);
+    setAvailableBlocks(shuffled);
+    setPlacedBlocks([]);
+    setPuzzleSubmitted(false);
+    setPuzzleSuccess(false);
+    setPuzzleErrorMsg(null);
+  };
+
+  const handleExecutePuzzle = () => {
+    if (!stageGame || placedBlocks.length === 0 || !activeStage || !selectedTrackId) return;
+    setPuzzleSubmitted(true);
+
+    const isMatch =
+      placedBlocks.length === stageGame.puzzle.correctOrder.length &&
+      placedBlocks.every((b, idx) => b.id === stageGame.puzzle.correctOrder[idx]);
+
+    if (isMatch) {
+      setPuzzleSuccess(true);
+      setPuzzleErrorMsg(null);
+      unlockNextStage(selectedTrackId, activeStage.id);
+      addXp(activeStage.xp);
+    } else {
+      setPuzzleSuccess(false);
+      const alive = loseLife(0.5);
+      setPuzzleErrorMsg(
+        "Erro de execução! A ordem dos blocos está incorreta. Você perdeu meio coração (-0.5 vida). Tente reorganizar a lógica!"
+      );
+      if (!alive) {
+        setShowOutOfLivesModal(true);
+      }
+    }
+  };
+
+  // Bug Hunter Handlers
+  const handleTapBugLine = (line: BugHunterLine) => {
+    if (bugSolved || !stageGame || !activeStage || !selectedTrackId) return;
+    setSelectedBugLine(line.lineNum);
+
+    if (line.isBug) {
+      setBugSolved(true);
+      setBugWrongFeedback(null);
+      unlockNextStage(selectedTrackId, activeStage.id);
+      addXp(activeStage.xp);
+    } else {
+      const alive = loseLife(0.5);
+      setBugWrongFeedback(
+        `A linha ${line.lineNum} está correta! Você perdeu meio coração (-0.5 vida). Inspecione com cuidado a sintaxe das outras linhas!`
+      );
+      if (!alive) {
+        setShowOutOfLivesModal(true);
+      }
+    }
+  };
+
+  // Quiz Handlers
   const handleAnswerSubmit = () => {
     if (!selectedOption || !selectedTrackId || !activeStage) return;
     const questions = quizQuestionsData[selectedTrackId]?.[activeStage.id] || [];
@@ -122,6 +247,10 @@ export function TelaTrilhas() {
       setQuizSuccess(true);
     } else {
       setQuizSuccess(false);
+      const alive = loseLife(0.5);
+      if (!alive) {
+        setShowOutOfLivesModal(true);
+      }
     }
   };
 
@@ -481,21 +610,37 @@ export function TelaTrilhas() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            {/* Close Button */}
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={handleCloseModal}
-              activeOpacity={0.7}
-            >
-              <X size={16} color="#aaa0c2" />
-            </TouchableOpacity>
+            {/* Modal Header Top Bar with Lives & Stage Info */}
+            <View style={styles.modalTopBar}>
+              <View style={styles.modalTopStageTag}>
+                <Text style={styles.modalTopStageTagText}>
+                  FASE {activeStage?.id || 1} · {selectedTrack?.short || "Trilha"}
+                </Text>
+              </View>
 
-            {/* Modal Navigation Tabs (Guia de Estudo vs Desafio) */}
+              <View style={styles.modalTopRightGroup}>
+                {/* Lives Hearts Pill */}
+                <View style={styles.modalLivesPill}>
+                  <HeartDisplay lives={lives} size={13} showText />
+                </View>
+
+                {/* Close Button */}
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={handleCloseModal}
+                  activeOpacity={0.7}
+                >
+                  <X size={16} color="#aaa0c2" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Modal Navigation Tabs (Guia de Estudo vs Jogar Desafio) */}
             {activeStage && (
               <View style={styles.modalTabsRow}>
                 <TouchableOpacity
                   style={[styles.modalTabButton, modalTab === "study" && styles.modalTabButtonActive]}
-                  onPress={() => setModalTab("study")}
+                  onPress={() => handleTabChange("study")}
                   activeOpacity={0.7}
                 >
                   <BookOpen size={13} color={modalTab === "study" ? "#ffffff" : "#a69abf"} />
@@ -506,12 +651,12 @@ export function TelaTrilhas() {
 
                 <TouchableOpacity
                   style={[styles.modalTabButton, modalTab === "quiz" && styles.modalTabButtonActive]}
-                  onPress={() => setModalTab("quiz")}
+                  onPress={() => handleTabChange("quiz")}
                   activeOpacity={0.7}
                 >
                   <Gamepad2 size={13} color={modalTab === "quiz" ? "#ffffff" : "#a69abf"} />
                   <Text style={[styles.modalTabText, modalTab === "quiz" && styles.modalTabTextActive]}>
-                    Desafio (+{activeStage.xp} XP)
+                    Jogar Fase (+{activeStage.xp} XP)
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -664,210 +809,565 @@ export function TelaTrilhas() {
                     </TouchableOpacity>
                   </View>
                 ) : (
-                  // --- 🎮 TAB: DESAFIO & QUIZ ---
-                  <View>
-                    {quizFinished ? (
-                      // Results View
-                      <View style={styles.resultsContainer}>
-                        <View style={styles.resultsIconBox}>
-                          <Sparkles size={28} color="#4ade80" />
-                        </View>
-                        <Text style={styles.resultsTitle}>Desafio Concluído!</Text>
-                        <Text style={styles.resultsSubtitle}>
-                          Parabéns! Você aplicou seus estudos com sucesso e somou XP na sua carreira.
-                        </Text>
-
-                        <View style={styles.resultsXpBadge}>
-                          <Zap size={15} color="#ffd700" fill="#ffd700" />
-                          <Text style={styles.resultsXpText}>+ {activeStage.xp} XP</Text>
-                        </View>
-
-                        <TouchableOpacity
-                          style={styles.resultsContinueButton}
-                          onPress={handleCloseModal}
-                          activeOpacity={0.85}
+                  // --- 🎮 TAB: JOGOS & DESAFIOS PRÁTICOS ---
+                  <View style={styles.gamesTabContainer}>
+                    {/* Game Mode Switcher */}
+                    <View style={styles.gameModeSelector}>
+                      <TouchableOpacity
+                        style={[
+                          styles.gameModeBtn,
+                          gameSubMode === "puzzle" && styles.gameModeBtnActive,
+                        ]}
+                        onPress={() => setGameSubMode("puzzle")}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.gameModeBtnText,
+                            gameSubMode === "puzzle" && styles.gameModeBtnTextActive,
+                          ]}
                         >
-                          <Text style={styles.resultsContinueText}>Continuar no Mapa</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      // Question Active View
-                      (() => {
-                        const questions =
-                          quizQuestionsData[selectedTrackId!]?.[activeStage.id] || [];
-                        const currentQ = questions[currentQuestionIndex];
-                        if (!currentQ) {
-                          return (
-                            <View style={styles.resultsContainer}>
-                              <View style={styles.resultsIconBox}>
-                                <Sparkles size={28} color="#4ade80" />
-                              </View>
-                              <Text style={styles.resultsTitle}>Desafio Prático</Text>
-                              <Text style={styles.resultsSubtitle}>
-                                Conteúdo estudado com sucesso! Complete a etapa para avançar no mapa.
-                              </Text>
-                              <TouchableOpacity
-                                style={styles.resultsContinueButton}
-                                onPress={() => {
-                                  unlockNextStage(selectedTrackId!, activeStage.id);
-                                  addXp(activeStage.xp);
-                                  handleCloseModal();
-                                }}
-                                activeOpacity={0.85}
-                              >
-                                <Text style={styles.resultsContinueText}>Concluir Etapa (+{activeStage.xp} XP)</Text>
+                          🧩 Montar Código
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.gameModeBtn,
+                          gameSubMode === "bug" && styles.gameModeBtnActive,
+                        ]}
+                        onPress={() => setGameSubMode("bug")}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.gameModeBtnText,
+                            gameSubMode === "bug" && styles.gameModeBtnTextActive,
+                          ]}
+                        >
+                          🐛 Caça ao Bug
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.gameModeBtn,
+                          gameSubMode === "quiz" && styles.gameModeBtnActive,
+                        ]}
+                        onPress={() => setGameSubMode("quiz")}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.gameModeBtnText,
+                            gameSubMode === "quiz" && styles.gameModeBtnTextActive,
+                          ]}
+                        >
+                          ⚡ Quiz Tático
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* ==================== 1. MINI-GAME: MONTAR CÓDIGO (PUZZLE) ==================== */}
+                    {gameSubMode === "puzzle" && stageGame && (
+                      <View style={styles.gameContentBox}>
+                        <View style={styles.gamePromptCard}>
+                          <View style={styles.gamePromptHeader}>
+                            <Terminal size={14} color="#a78bfa" />
+                            <Text style={styles.gamePromptTitle}>{stageGame.puzzle.title}</Text>
+                          </View>
+                          <Text style={styles.gamePromptDesc}>
+                            {stageGame.puzzle.objective}
+                          </Text>
+                        </View>
+
+                        {/* Placed Blocks Slot Area */}
+                        <View style={styles.assemblyArea}>
+                          <View style={styles.assemblyHeaderRow}>
+                            <Text style={styles.assemblyHeaderText}>
+                              SEQUÊNCIA DE EXECUÇÃO ({placedBlocks.length}/{stageGame.puzzle.blocks.length})
+                            </Text>
+                            {placedBlocks.length > 0 && !puzzleSuccess && (
+                              <TouchableOpacity onPress={handleResetPuzzle}>
+                                <Text style={styles.assemblyResetText}>Limpar</Text>
                               </TouchableOpacity>
-                            </View>
-                          );
-                        }
+                            )}
+                          </View>
 
-                        return (
-                          <View>
-                            {/* Progress Header */}
-                            <View style={styles.quizProgressRow}>
-                              <Text style={styles.quizProgressText}>
-                                PERGUNTA {currentQuestionIndex + 1} DE {questions.length}
-                              </Text>
-                              <Text style={styles.quizScoreText}>
-                                Acertos: {correctCount}
+                          {placedBlocks.length === 0 ? (
+                            <View style={styles.emptyAssemblyBox}>
+                              <Text style={styles.emptyAssemblyText}>
+                                Toque nos blocos abaixo para posicioná-los aqui na ordem correta de execução.
                               </Text>
                             </View>
-
-                            <View style={styles.quizProgressBarTrack}>
-                              <View
-                                style={[
-                                  styles.quizProgressBarFill,
-                                  {
-                                    width: `${
-                                      ((currentQuestionIndex + 1) / questions.length) * 100
-                                    }%`,
-                                  },
-                                ]}
-                              />
+                          ) : (
+                            <View style={styles.placedBlocksList}>
+                              {placedBlocks.map((block, idx) => (
+                                <TouchableOpacity
+                                  key={block.id}
+                                  style={[
+                                    styles.placedBlockItem,
+                                    puzzleSuccess && styles.placedBlockItemSuccess,
+                                  ]}
+                                  onPress={() => handleRemoveBlock(block)}
+                                  activeOpacity={0.7}
+                                  disabled={puzzleSuccess}
+                                >
+                                  <View style={styles.blockIndexBadge}>
+                                    <Text style={styles.blockIndexText}>{idx + 1}</Text>
+                                  </View>
+                                  <Text style={styles.placedBlockCodeText}>{block.text}</Text>
+                                  {!puzzleSuccess && <X size={12} color="#a69aba" />}
+                                </TouchableOpacity>
+                              ))}
                             </View>
+                          )}
+                        </View>
 
-                            <Text style={styles.questionText}>{currentQ.question}</Text>
-
-                            {/* Options */}
-                            <View style={styles.optionsList}>
-                              {currentQ.options.map((opt) => {
-                                const isSelected = selectedOption === opt;
-                                let optionStyle = styles.optionButton;
-                                let optionTextStyle = styles.optionText;
-
-                                if (answerSubmitted) {
-                                  if (opt === currentQ.correct) {
-                                    optionStyle = styles.optionButtonCorrect;
-                                    optionTextStyle = styles.optionTextCorrect;
-                                  } else if (isSelected && opt !== currentQ.correct) {
-                                    optionStyle = styles.optionButtonWrong;
-                                    optionTextStyle = styles.optionTextWrong;
-                                  } else {
-                                    optionStyle = styles.optionButtonDisabled;
-                                  }
-                                } else if (isSelected) {
-                                  optionStyle = styles.optionButtonSelected;
-                                  optionTextStyle = styles.optionTextSelected;
-                                }
-
-                                return (
+                        {/* Available Blocks Bank */}
+                        {!puzzleSuccess && (
+                          <View style={styles.blocksBankArea}>
+                            <Text style={styles.blocksBankHeaderText}>BLOCOS DISPONÍVEIS:</Text>
+                            {availableBlocks.length === 0 ? (
+                              <Text style={styles.allPlacedText}>
+                                Todos os blocos foram posicionados! Clique em Executar para testar.
+                              </Text>
+                            ) : (
+                              <View style={styles.availableBlocksList}>
+                                {availableBlocks.map((block) => (
                                   <TouchableOpacity
-                                    key={opt}
-                                    style={optionStyle}
-                                    disabled={answerSubmitted}
-                                    onPress={() => setSelectedOption(opt)}
-                                    activeOpacity={0.8}
+                                    key={block.id}
+                                    style={styles.availableBlockButton}
+                                    onPress={() => handlePlaceBlock(block)}
+                                    activeOpacity={0.7}
                                   >
-                                    <Text style={optionTextStyle}>{opt}</Text>
+                                    <Text style={styles.availableBlockCodeText}>
+                                      {block.text}
+                                    </Text>
                                   </TouchableOpacity>
-                                );
-                              })}
+                                ))}
+                              </View>
+                            )}
+                          </View>
+                        )}
+
+                        {/* Error Feedback */}
+                        {puzzleErrorMsg && !puzzleSuccess && (
+                          <View style={styles.gameErrorBanner}>
+                            <AlertTriangle size={16} color="#ef4444" />
+                            <Text style={styles.gameErrorText}>{puzzleErrorMsg}</Text>
+                          </View>
+                        )}
+
+                        {/* Success Terminal Execution Output */}
+                        {puzzleSuccess && (
+                          <View style={styles.terminalSuccessBox}>
+                            <View style={styles.terminalHeader}>
+                              <View style={styles.terminalDotsRow}>
+                                <View style={[styles.terminalDot, { backgroundColor: "#ef4444" }]} />
+                                <View style={[styles.terminalDot, { backgroundColor: "#eab308" }]} />
+                                <View style={[styles.terminalDot, { backgroundColor: "#22c55e" }]} />
+                              </View>
+                              <Text style={styles.terminalHeaderTitle}>node index.js (Sucesso!)</Text>
+                            </View>
+                            <Text style={styles.terminalOutputText}>{stageGame.puzzle.outputPreview}</Text>
+                            <View style={styles.terminalExplanationRow}>
+                              <CheckCircle size={14} color="#4ade80" />
+                              <Text style={styles.terminalExplanationText}>
+                                {stageGame.puzzle.explanation}
+                              </Text>
                             </View>
 
-                            {/* Feedback & Detailed Technical Explanation */}
-                            {answerSubmitted && (
-                              <View
-                                style={[
-                                  styles.explanationBox,
-                                  quizSuccess
-                                    ? styles.explanationBoxSuccess
-                                    : styles.explanationBoxWrong,
-                                ]}
-                              >
-                                <View style={styles.explanationHeaderRow}>
-                                  {quizSuccess ? (
-                                    <Check size={16} color="#4ade80" strokeWidth={3} />
-                                  ) : (
-                                    <X size={16} color="#f87171" strokeWidth={3} />
-                                  )}
+                            <View style={styles.gameRewardBadge}>
+                              <Zap size={14} color="#facc15" fill="#facc15" />
+                              <Text style={styles.gameRewardText}>+{activeStage.xp} XP Conquistados!</Text>
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Action Buttons */}
+                        <View style={styles.gameActionButtonsRow}>
+                          <TouchableOpacity
+                            style={styles.gameReviewButton}
+                            onPress={() => handleTabChange("study")}
+                            activeOpacity={0.7}
+                          >
+                            <BookOpen size={13} color="#a69abf" />
+                            <Text style={styles.gameReviewText}>Rever Teoria</Text>
+                          </TouchableOpacity>
+
+                          {!puzzleSuccess ? (
+                            <TouchableOpacity
+                              style={[
+                                styles.gameExecuteButton,
+                                placedBlocks.length === 0 && styles.gameExecuteButtonDisabled,
+                              ]}
+                              disabled={placedBlocks.length === 0}
+                              onPress={handleExecutePuzzle}
+                              activeOpacity={0.8}
+                            >
+                              <Play size={13} color="#ffffff" fill="#ffffff" />
+                              <Text style={styles.gameExecuteText}>▶ Executar Código</Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <TouchableOpacity
+                              style={styles.gameFinishButton}
+                              onPress={handleCloseModal}
+                              activeOpacity={0.8}
+                            >
+                              <Text style={styles.gameFinishText}>Continuar no Mapa</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    )}
+
+                    {/* ==================== 2. MINI-GAME: CAÇA AO BUG ==================== */}
+                    {gameSubMode === "bug" && stageGame && (
+                      <View style={styles.gameContentBox}>
+                        <View style={styles.gamePromptCard}>
+                          <View style={styles.gamePromptHeader}>
+                            <Bug size={14} color="#f87171" />
+                            <Text style={styles.gamePromptTitle}>{stageGame.bugHunter.title}</Text>
+                          </View>
+                          <Text style={styles.gamePromptDesc}>
+                            {stageGame.bugHunter.objective}
+                          </Text>
+                        </View>
+
+                        {/* IDE Code Inspection Window */}
+                        <View style={styles.ideWindow}>
+                          <View style={styles.ideHeader}>
+                            <View style={styles.terminalDotsRow}>
+                              <View style={[styles.terminalDot, { backgroundColor: "#ef4444" }]} />
+                              <View style={[styles.terminalDot, { backgroundColor: "#eab308" }]} />
+                              <View style={[styles.terminalDot, { backgroundColor: "#22c55e" }]} />
+                            </View>
+                            <Text style={styles.ideHeaderTitle}>
+                              editor.{stageGame.bugHunter.language === "python" ? "py" : "js"}
+                            </Text>
+                            <View style={styles.ideLanguageTag}>
+                              <Text style={styles.ideLanguageText}>
+                                {stageGame.bugHunter.language.toUpperCase()}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Code Lines as Interactive Tappable Rows */}
+                          <View style={styles.ideLinesContainer}>
+                            {stageGame.bugHunter.lines.map((line) => {
+                              const isSelected = selectedBugLine === line.lineNum;
+                              const isThisBug = line.isBug;
+                              const isSolvedBug = isSelected && isThisBug;
+                              const isWrongGuess = isSelected && !isThisBug;
+
+                              return (
+                                <TouchableOpacity
+                                  key={line.lineNum}
+                                  style={[
+                                    styles.ideLineRow,
+                                    isSolvedBug && styles.ideLineRowBugFound,
+                                    isWrongGuess && styles.ideLineRowWrongGuess,
+                                  ]}
+                                  onPress={() => handleTapBugLine(line)}
+                                  activeOpacity={0.7}
+                                  disabled={bugSolved}
+                                >
                                   <Text
                                     style={[
-                                      styles.explanationStatusTitle,
-                                      quizSuccess
-                                        ? styles.explanationStatusSuccess
-                                        : styles.explanationStatusWrong,
+                                      styles.ideLineNumber,
+                                      isSolvedBug && styles.ideLineNumberBug,
                                     ]}
                                   >
-                                    {quizSuccess
-                                      ? "Resposta Correta!"
-                                      : `Incorreto! A resposta é: ${currentQ.correct}`}
+                                    {line.lineNum}
+                                  </Text>
+                                  <Text
+                                    style={[
+                                      styles.ideLineCode,
+                                      isSolvedBug && styles.ideLineCodeBugFound,
+                                      isWrongGuess && styles.ideLineCodeWrong,
+                                    ]}
+                                  >
+                                    {line.code}
+                                  </Text>
+                                  {isSolvedBug && <Bug size={14} color="#22c55e" />}
+                                  {isWrongGuess && <X size={14} color="#f87171" />}
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        </View>
+
+                        {/* Wrong Guess Banner */}
+                        {bugWrongFeedback && !bugSolved && (
+                          <View style={styles.gameErrorBanner}>
+                            <AlertTriangle size={16} color="#ef4444" />
+                            <Text style={styles.gameErrorText}>{bugWrongFeedback}</Text>
+                          </View>
+                        )}
+
+                        {/* Bug Squashed Success Card */}
+                        {bugSolved && (
+                          <View style={styles.terminalSuccessBox}>
+                            <View style={styles.bugSuccessHeader}>
+                              <CheckCircle size={18} color="#4ade80" />
+                              <Text style={styles.bugSuccessTitle}>Bug Eliminado com Sucesso!</Text>
+                            </View>
+                            <Text style={styles.bugSuccessDesc}>
+                              {stageGame.bugHunter.bugExplanation}
+                            </Text>
+
+                            <View style={styles.bugFixBox}>
+                              <Text style={styles.bugFixLabel}>LINHA CORRIGIDA:</Text>
+                              <Text style={styles.bugFixCode}>{stageGame.bugHunter.fixPreview}</Text>
+                            </View>
+
+                            <View style={styles.gameRewardBadge}>
+                              <Zap size={14} color="#facc15" fill="#facc15" />
+                              <Text style={styles.gameRewardText}>+{activeStage.xp} XP Conquistados!</Text>
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Action Buttons */}
+                        <View style={styles.gameActionButtonsRow}>
+                          <TouchableOpacity
+                            style={styles.gameReviewButton}
+                            onPress={() => handleTabChange("study")}
+                            activeOpacity={0.7}
+                          >
+                            <BookOpen size={13} color="#a69abf" />
+                            <Text style={styles.gameReviewText}>Rever Teoria</Text>
+                          </TouchableOpacity>
+
+                          {bugSolved ? (
+                            <TouchableOpacity
+                              style={styles.gameFinishButton}
+                              onPress={handleCloseModal}
+                              activeOpacity={0.8}
+                            >
+                              <Text style={styles.gameFinishText}>Continuar no Mapa</Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <View style={styles.ideHintBox}>
+                              <Text style={styles.ideHintText}>
+                                Toque na linha com erro para eliminar o bug!
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    )}
+
+                    {/* ==================== 3. MINI-GAME: QUIZ TÁTICO ==================== */}
+                    {gameSubMode === "quiz" && (
+                      <View>
+                        {quizFinished ? (
+                          // Results View
+                          <View style={styles.resultsContainer}>
+                            <View style={styles.resultsIconBox}>
+                              <Sparkles size={28} color="#4ade80" />
+                            </View>
+                            <Text style={styles.resultsTitle}>Quiz Concluído!</Text>
+                            <Text style={styles.resultsSubtitle}>
+                              Parabéns! Você aplicou seus estudos com sucesso e somou XP na sua carreira.
+                            </Text>
+
+                            <View style={styles.resultsXpBadge}>
+                              <Zap size={15} color="#ffd700" fill="#ffd700" />
+                              <Text style={styles.resultsXpText}>+ {activeStage.xp} XP</Text>
+                            </View>
+
+                            <TouchableOpacity
+                              style={styles.resultsContinueButton}
+                              onPress={handleCloseModal}
+                              activeOpacity={0.85}
+                            >
+                              <Text style={styles.resultsContinueText}>Continuar no Mapa</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          // Question Active View
+                          (() => {
+                            const questions =
+                              quizQuestionsData[selectedTrackId!]?.[activeStage.id] || [];
+                            const currentQ = questions[currentQuestionIndex];
+                            if (!currentQ) {
+                              return (
+                                <View style={styles.resultsContainer}>
+                                  <View style={styles.resultsIconBox}>
+                                    <Sparkles size={28} color="#4ade80" />
+                                  </View>
+                                  <Text style={styles.resultsTitle}>Desafio Prático</Text>
+                                  <Text style={styles.resultsSubtitle}>
+                                    Conteúdo estudado com sucesso! Complete a etapa para avançar no mapa.
+                                  </Text>
+                                  <TouchableOpacity
+                                    style={styles.resultsContinueButton}
+                                    onPress={() => {
+                                      unlockNextStage(selectedTrackId!, activeStage.id);
+                                      addXp(activeStage.xp);
+                                      handleCloseModal();
+                                    }}
+                                    activeOpacity={0.85}
+                                  >
+                                    <Text style={styles.resultsContinueText}>
+                                      Concluir Etapa (+{activeStage.xp} XP)
+                                    </Text>
+                                  </TouchableOpacity>
+                                </View>
+                              );
+                            }
+
+                            return (
+                              <View>
+                                {/* Progress Header */}
+                                <View style={styles.quizProgressRow}>
+                                  <Text style={styles.quizProgressText}>
+                                    PERGUNTA {currentQuestionIndex + 1} DE {questions.length}
+                                  </Text>
+                                  <Text style={styles.quizScoreText}>
+                                    Acertos: {correctCount}
                                   </Text>
                                 </View>
 
-                                {currentQ.explanation ? (
-                                  <View style={styles.explanationInnerBox}>
-                                    <View style={styles.explanationReasonHeader}>
-                                      <Lightbulb size={12} color="#ffd700" />
-                                      <Text style={styles.explanationReasonTitle}>
-                                        POR QUE ESTA É A RESPOSTA?
+                                <View style={styles.quizProgressBarTrack}>
+                                  <View
+                                    style={[
+                                      styles.quizProgressBarFill,
+                                      {
+                                        width: `${
+                                          ((currentQuestionIndex + 1) / questions.length) * 100
+                                        }%`,
+                                      },
+                                    ]}
+                                  />
+                                </View>
+
+                                <Text style={styles.questionText}>{currentQ.question}</Text>
+
+                                {/* Options */}
+                                <View style={styles.optionsList}>
+                                  {currentQ.options.map((opt) => {
+                                    const isSelected = selectedOption === opt;
+                                    let optionStyle = styles.optionButton;
+                                    let optionTextStyle = styles.optionText;
+
+                                    if (answerSubmitted) {
+                                      if (opt === currentQ.correct) {
+                                        optionStyle = styles.optionButtonCorrect;
+                                        optionTextStyle = styles.optionTextCorrect;
+                                      } else if (isSelected && opt !== currentQ.correct) {
+                                        optionStyle = styles.optionButtonWrong;
+                                        optionTextStyle = styles.optionTextWrong;
+                                      } else {
+                                        optionStyle = styles.optionButtonDisabled;
+                                      }
+                                    } else if (isSelected) {
+                                      optionStyle = styles.optionButtonSelected;
+                                      optionTextStyle = styles.optionTextSelected;
+                                    }
+
+                                    return (
+                                      <TouchableOpacity
+                                        key={opt}
+                                        style={optionStyle}
+                                        disabled={answerSubmitted}
+                                        onPress={() => setSelectedOption(opt)}
+                                        activeOpacity={0.8}
+                                      >
+                                        <Text style={optionTextStyle}>{opt}</Text>
+                                      </TouchableOpacity>
+                                    );
+                                  })}
+                                </View>
+
+                                {/* Feedback & Detailed Technical Explanation */}
+                                {answerSubmitted && (
+                                  <View
+                                    style={[
+                                      styles.explanationBox,
+                                      quizSuccess
+                                        ? styles.explanationBoxSuccess
+                                        : styles.explanationBoxWrong,
+                                    ]}
+                                  >
+                                    <View style={styles.explanationHeaderRow}>
+                                      {quizSuccess ? (
+                                        <Check size={16} color="#4ade80" strokeWidth={3} />
+                                      ) : (
+                                        <X size={16} color="#f87171" strokeWidth={3} />
+                                      )}
+                                      <Text
+                                        style={[
+                                          styles.explanationStatusTitle,
+                                          quizSuccess
+                                            ? styles.explanationStatusSuccess
+                                            : styles.explanationStatusWrong,
+                                        ]}
+                                      >
+                                        {quizSuccess
+                                          ? "Resposta Correta!"
+                                          : `Incorreto (-0.5 Vida)! Resposta: ${currentQ.correct}`}
                                       </Text>
                                     </View>
-                                    <Text style={styles.explanationReasonText}>
-                                      {currentQ.explanation}
-                                    </Text>
+
+                                    {currentQ.explanation ? (
+                                      <View style={styles.explanationInnerBox}>
+                                        <View style={styles.explanationReasonHeader}>
+                                          <Lightbulb size={12} color="#ffd700" />
+                                          <Text style={styles.explanationReasonTitle}>
+                                            POR QUE ESTA É A RESPOSTA?
+                                          </Text>
+                                        </View>
+                                        <Text style={styles.explanationReasonText}>
+                                          {currentQ.explanation}
+                                        </Text>
+                                      </View>
+                                    ) : null}
                                   </View>
-                                ) : null}
+                                )}
+
+                                {/* Bottom Action */}
+                                <View style={styles.quizFooter}>
+                                  <TouchableOpacity
+                                    style={styles.quizGiveUpButton}
+                                    onPress={() => handleTabChange("study")}
+                                  >
+                                    <Text style={styles.quizGiveUpText}>Revisar Estudo</Text>
+                                  </TouchableOpacity>
+
+                                  {!answerSubmitted ? (
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.quizSubmitButton,
+                                        !selectedOption && styles.quizSubmitButtonDisabled,
+                                      ]}
+                                      disabled={!selectedOption}
+                                      onPress={handleAnswerSubmit}
+                                    >
+                                      <Text style={styles.quizSubmitText}>
+                                        Enviar Resposta
+                                      </Text>
+                                    </TouchableOpacity>
+                                  ) : (
+                                    <TouchableOpacity
+                                      style={styles.quizSubmitButton}
+                                      onPress={handleNextQuestion}
+                                    >
+                                      <Text style={styles.quizSubmitText}>
+                                        {currentQuestionIndex + 1 === questions.length
+                                          ? "Ver Resultado"
+                                          : "Próxima Questão"}
+                                      </Text>
+                                    </TouchableOpacity>
+                                  )}
+                                </View>
                               </View>
-                            )}
-
-                            {/* Bottom Action */}
-                            <View style={styles.quizFooter}>
-                              <TouchableOpacity
-                                style={styles.quizGiveUpButton}
-                                onPress={() => setModalTab("study")}
-                              >
-                                <Text style={styles.quizGiveUpText}>Revisar Estudo</Text>
-                              </TouchableOpacity>
-
-                              {!answerSubmitted ? (
-                                <TouchableOpacity
-                                  style={[
-                                    styles.quizSubmitButton,
-                                    !selectedOption && styles.quizSubmitButtonDisabled,
-                                  ]}
-                                  disabled={!selectedOption}
-                                  onPress={handleAnswerSubmit}
-                                >
-                                  <Text style={styles.quizSubmitText}>
-                                    Enviar Resposta
-                                  </Text>
-                                </TouchableOpacity>
-                              ) : (
-                                <TouchableOpacity
-                                  style={styles.quizSubmitButton}
-                                  onPress={handleNextQuestion}
-                                >
-                                  <Text style={styles.quizSubmitText}>
-                                    {currentQuestionIndex + 1 === questions.length
-                                      ? "Ver Resultado"
-                                      : "Próxima Questão"}
-                                  </Text>
-                                </TouchableOpacity>
-                              )}
-                            </View>
-                          </View>
-                        );
-                      })()
+                            );
+                          })()
+                        )}
+                      </View>
                     )}
                   </View>
                 )
@@ -888,7 +1388,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 40,
+    paddingBottom: 110,
     maxWidth: 600,
     width: "100%",
     alignSelf: "center",
@@ -1912,5 +2412,485 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     color: "#ffffff",
+  },
+
+  // Modal Top Bar with Lives
+  modalTopBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  modalTopStageTag: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  modalTopStageTagText: {
+    fontSize: 9.5,
+    fontWeight: "800",
+    color: "#c4b5fd",
+    letterSpacing: 0.5,
+  },
+  modalTopRightGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  modalLivesPill: {
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderRadius: 12,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+
+  // Games Tab & Mode Switcher
+  gamesTabContainer: {
+    paddingTop: 4,
+  },
+  gameModeSelector: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 3,
+    marginBottom: 12,
+  },
+  gameModeBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+  },
+  gameModeBtnActive: {
+    backgroundColor: "#6b4be0",
+  },
+  gameModeBtnText: {
+    fontSize: 9.5,
+    fontWeight: "700",
+    color: "#a69abf",
+  },
+  gameModeBtnTextActive: {
+    color: "#ffffff",
+  },
+
+  // Game Prompts
+  gameContentBox: {
+    gap: 8,
+  },
+  gamePromptCard: {
+    backgroundColor: "#1e1338",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.07)",
+    borderRadius: 14,
+    padding: 11,
+    marginBottom: 8,
+  },
+  gamePromptHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  gamePromptTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  gamePromptDesc: {
+    fontSize: 10.5,
+    color: "#c4badb",
+    lineHeight: 15,
+  },
+
+  // Assembly Area
+  assemblyArea: {
+    backgroundColor: "rgba(15, 8, 38, 0.7)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 14,
+    padding: 10,
+    marginBottom: 10,
+  },
+  assemblyHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  assemblyHeaderText: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 8.5,
+    fontWeight: "800",
+    color: "#a78bfa",
+    letterSpacing: 0.5,
+  },
+  assemblyResetText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#fca5a5",
+  },
+  emptyAssemblyBox: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyAssemblyText: {
+    fontSize: 10.5,
+    color: "#8b80a6",
+    textAlign: "center",
+    lineHeight: 15,
+  },
+  placedBlocksList: {
+    gap: 6,
+  },
+  placedBlockItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#28194a",
+    borderWidth: 1,
+    borderColor: "rgba(167, 139, 250, 0.35)",
+    borderRadius: 10,
+    padding: 9,
+    gap: 8,
+  },
+  placedBlockItemSuccess: {
+    borderColor: "#22c55e",
+    backgroundColor: "rgba(34, 197, 94, 0.15)",
+  },
+  blockIndexBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#6b4ee8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  blockIndexText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  placedBlockCodeText: {
+    flex: 1,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 11,
+    color: "#ffffff",
+  },
+
+  // Blocks Bank
+  blocksBankArea: {
+    marginBottom: 10,
+  },
+  blocksBankHeaderText: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 8.5,
+    fontWeight: "800",
+    color: "#9487b0",
+    marginBottom: 6,
+  },
+  allPlacedText: {
+    fontSize: 10.5,
+    color: "#a7f3d0",
+    fontStyle: "italic",
+    paddingVertical: 4,
+  },
+  availableBlocksList: {
+    gap: 6,
+  },
+  availableBlockButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 10,
+    padding: 9,
+  },
+  availableBlockCodeText: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 11,
+    color: "#e2ddf5",
+  },
+
+  // Game Errors & Success
+  gameErrorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.35)",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+  },
+  gameErrorText: {
+    flex: 1,
+    fontSize: 10.5,
+    fontWeight: "600",
+    color: "#fca5a5",
+    lineHeight: 15,
+  },
+  terminalSuccessBox: {
+    backgroundColor: "#0a0518",
+    borderWidth: 1,
+    borderColor: "rgba(34, 197, 94, 0.4)",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+  },
+  terminalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    paddingBottom: 6,
+    marginBottom: 8,
+  },
+  terminalDotsRow: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  terminalDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  terminalHeaderTitle: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#94a3b8",
+  },
+  terminalOutputText: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 11,
+    color: "#4ade80",
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  terminalExplanationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  terminalExplanationText: {
+    flex: 1,
+    fontSize: 10.5,
+    color: "#d1fae5",
+    lineHeight: 14,
+  },
+  gameRewardBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(250, 204, 21, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(250, 204, 21, 0.3)",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    alignSelf: "flex-start",
+    marginTop: 10,
+  },
+  gameRewardText: {
+    fontSize: 10.5,
+    fontWeight: "800",
+    color: "#fde047",
+  },
+  gameActionButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  gameReviewButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
+    paddingVertical: 10,
+  },
+  gameReviewText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#a69abf",
+  },
+  gameExecuteButton: {
+    flex: 1.4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#7c3aed",
+    borderRadius: 12,
+    paddingVertical: 10,
+  },
+  gameExecuteButtonDisabled: {
+    backgroundColor: "rgba(124, 58, 237, 0.35)",
+  },
+  gameExecuteText: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  gameFinishButton: {
+    flex: 1.4,
+    backgroundColor: "#22c55e",
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gameFinishText: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+
+  // IDE Window (Bug Hunter)
+  ideWindow: {
+    backgroundColor: "#0f0826",
+    borderWidth: 1,
+    borderColor: "rgba(141, 117, 243, 0.25)",
+    borderRadius: 14,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  ideHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+  },
+  ideHeaderTitle: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 9.5,
+    fontWeight: "700",
+    color: "#b8add1",
+  },
+  ideLanguageTag: {
+    backgroundColor: "rgba(168, 85, 247, 0.2)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  ideLanguageText: {
+    fontSize: 8.5,
+    fontWeight: "800",
+    color: "#d8b4fe",
+  },
+  ideLinesContainer: {
+    padding: 6,
+  },
+  ideLineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    gap: 8,
+  },
+  ideLineRowBugFound: {
+    backgroundColor: "rgba(34, 197, 94, 0.2)",
+    borderWidth: 1,
+    borderColor: "#22c55e",
+  },
+  ideLineRowWrongGuess: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    borderWidth: 1,
+    borderColor: "#ef4444",
+  },
+  ideLineNumber: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 10,
+    color: "#6b5e87",
+    width: 18,
+    textAlign: "right",
+  },
+  ideLineNumberBug: {
+    color: "#4ade80",
+    fontWeight: "800",
+  },
+  ideLineCode: {
+    flex: 1,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 11,
+    color: "#f1f5f9",
+  },
+  ideLineCodeBugFound: {
+    color: "#86efac",
+    fontWeight: "800",
+  },
+  ideLineCodeWrong: {
+    color: "#fca5a5",
+  },
+  bugSuccessHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  bugSuccessTitle: {
+    fontSize: 12.5,
+    fontWeight: "800",
+    color: "#4ade80",
+  },
+  bugSuccessDesc: {
+    fontSize: 11,
+    color: "#d1fae5",
+    lineHeight: 15,
+    marginBottom: 8,
+  },
+  bugFixBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    borderLeftWidth: 3,
+    borderLeftColor: "#22c55e",
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  bugFixLabel: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 8.5,
+    fontWeight: "800",
+    color: "#86efac",
+    marginBottom: 2,
+  },
+  bugFixCode: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontSize: 10.5,
+    color: "#ffffff",
+  },
+  ideHintBox: {
+    flex: 1.4,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  ideHintText: {
+    fontSize: 9.5,
+    color: "#9487b0",
+    textAlign: "center",
   },
 });

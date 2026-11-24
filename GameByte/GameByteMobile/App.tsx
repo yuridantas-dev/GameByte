@@ -1,6 +1,6 @@
 import React from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View, SafeAreaView, Platform, StatusBar as RNStatusBar } from "react-native";
+import { StyleSheet, View, Platform, StatusBar as RNStatusBar } from "react-native";
 import { AppProvider, useApp } from "./src/context/AppContext";
 import { Cabecalho } from "./src/components/Cabecalho";
 import { MenuNavegacao } from "./src/components/MenuNavegacao";
@@ -10,6 +10,7 @@ import { TelaTrilhas } from "./src/screens/TelaTrilhas";
 import { TelaRanking } from "./src/screens/TelaRanking";
 import { TelaPerfil } from "./src/screens/TelaPerfil";
 import { TelaCarregamento } from "./src/screens/TelaCarregamento";
+import { OutOfLivesModal } from "./src/components/OutOfLivesModal";
 
 function MainApp() {
   const { isLoggedIn, isAppLoading, loadingMessage, setAppLoading, currentTab } = useApp();
@@ -42,12 +43,13 @@ function MainApp() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <RNStatusBar barStyle="light-content" backgroundColor="#160d2e" translucent={false} />
       <Cabecalho />
       <View style={styles.screenContainer}>{renderScreen()}</View>
       <MenuNavegacao />
-    </SafeAreaView>
+      <OutOfLivesModal />
+    </View>
   );
 }
 

@@ -56,4 +56,35 @@ export interface LeaderboardUser {
   streak: number;
   initials: string;
   tone: [string, string];
+  level?: number;
+  avatarId?: number;
+}
+
+export interface Avatar3D {
+  id: number;
+  levelRequired: number;
+  name: string;
+  title: string;
+  description: string;
+  image: any;
+  tag: string;
+  accentColor: string;
+  borderGradient: [string, string];
+  perk: string;
+  lore: string;
+}
+
+export interface LevelInfo {
+  level: number;
+  title: string;
+  totalXp: number;
+  levelMinXp: number;
+  levelMaxXp: number;
+  currentLevelXp: number;
+  levelXpCap: number;
+  progressPercent: number;
+  nextLevelTotalXp: number;
+  currentAvatar: Avatar3D;
+  unlockedAvatars: Avatar3D[];
+  allAvatars: Avatar3D[];
 }

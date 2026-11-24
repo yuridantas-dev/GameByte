@@ -19,7 +19,7 @@ const isSmallDevice = screenWidth < 375;
 const mascotCelebrate = require("../../assets/mascote_transparent.png");
 
 export function TelaInicio() {
-  const { totalXp, setCurrentTab, setSelectedTrackId } = useApp();
+  const { totalXp, levelInfo, setCurrentTab, setSelectedTrackId } = useApp();
 
   const handleStartTracks = () => {
     setSelectedTrackId(null);
@@ -56,6 +56,50 @@ export function TelaInicio() {
           />
         </View>
       </LinearGradient>
+
+      {/* Level Progress Banner */}
+      <TouchableOpacity
+        style={styles.levelBanner}
+        activeOpacity={0.85}
+        onPress={() => setCurrentTab("profile")}
+      >
+        <View style={[styles.levelAvatarThumb, { borderColor: levelInfo.currentAvatar.accentColor }]}>
+          <Image
+            source={levelInfo.currentAvatar.image}
+            style={styles.levelAvatarThumbImg}
+            resizeMode="cover"
+          />
+        </View>
+
+        <View style={styles.levelBannerInfo}>
+          <View style={styles.levelBannerHeader}>
+            <View style={styles.levelBadgeMini}>
+              <Text style={styles.levelBadgeMiniText}>NV. {levelInfo.level}</Text>
+            </View>
+            <Text style={styles.levelAvatarName} numberOfLines={1}>
+              {levelInfo.currentAvatar.name}
+            </Text>
+            <Text style={styles.levelPercentText}>{levelInfo.progressPercent}%</Text>
+          </View>
+
+          {/* Progress Bar to next level */}
+          <View style={styles.levelBarTrack}>
+            <View
+              style={[
+                styles.levelBarFill,
+                {
+                  width: `${levelInfo.progressPercent}%`,
+                  backgroundColor: levelInfo.currentAvatar.accentColor,
+                },
+              ]}
+            />
+          </View>
+
+          <Text style={styles.levelSubtext}>
+            {levelInfo.totalXp.toLocaleString("pt-BR")}/{levelInfo.levelMaxXp.toLocaleString("pt-BR")} XP · Faltam {levelInfo.levelMaxXp - levelInfo.totalXp} XP para Nv. {levelInfo.level + 1}
+          </Text>
+        </View>
+      </TouchableOpacity>
 
       {/* 2. Three Stat Badges */}
       <View style={styles.statsRow}>
@@ -151,7 +195,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: 110,
     maxWidth: 600,
     width: "100%",
     alignSelf: "center",
@@ -210,6 +254,81 @@ const styles = StyleSheet.create({
   heroMascot: {
     width: "100%",
     height: "100%",
+  },
+
+  // Level Progress Banner
+  levelBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(33, 20, 64, 0.8)",
+    borderWidth: 1,
+    borderColor: "rgba(141, 117, 243, 0.25)",
+    borderRadius: 18,
+    padding: 10,
+    marginTop: 12,
+    gap: 10,
+  },
+  levelAvatarThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 2,
+    backgroundColor: "#160d2e",
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  levelAvatarThumbImg: {
+    width: "100%",
+    height: "100%",
+  },
+  levelBannerInfo: {
+    flex: 1,
+  },
+  levelBannerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  levelBadgeMini: {
+    backgroundColor: "#6b4ee8",
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  levelBadgeMiniText: {
+    fontSize: 8.5,
+    fontWeight: "900",
+    color: "#ffffff",
+  },
+  levelAvatarName: {
+    flex: 1,
+    fontSize: 11.5,
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  levelPercentText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#f8c662",
+  },
+  levelBarTrack: {
+    width: "100%",
+    height: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  levelBarFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  levelSubtext: {
+    fontSize: 9,
+    color: "#a69bbf",
+    marginTop: 3,
+    fontWeight: "600",
   },
 
   // 3 Stats
