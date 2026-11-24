@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 28 : 22,
     paddingHorizontal: 20,
     paddingBottom: 28,
-    minHeight: isSmallDevice ? 230 : 255,
+    minHeight: isSmallDevice ? 245 : 270,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     overflow: "hidden",
@@ -358,8 +358,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
   },
   heroTextContainer: {
-    marginTop: isSmallDevice ? 16 : 22,
-    maxWidth: isSmallDevice ? "55%" : "58%",
+    marginTop: isSmallDevice ? 34 : 44,
+    maxWidth: isSmallDevice ? "56%" : "60%",
     zIndex: 2,
   },
   tagline: {
@@ -368,15 +368,15 @@ const styles = StyleSheet.create({
     color: "#dfd6ff",
     letterSpacing: 1.4,
     textTransform: "uppercase",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   heroTitle: {
     fontSize: isSmallDevice ? 19 : 22,
-    lineHeight: isSmallDevice ? 23 : 26,
+    lineHeight: isSmallDevice ? 24 : 27,
     fontWeight: "800",
     color: "#ffffff",
     letterSpacing: -0.5,
-    marginTop: 4,
+    marginTop: 2,
   },
   highlightText: {
     color: "#f6c768",
