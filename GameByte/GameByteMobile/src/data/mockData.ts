@@ -1477,7 +1477,7 @@ export const initialClassStudents = [
   {
     id: "s1",
     name: "João Victor",
-    email: "joao.victor@portalcci.com.br",
+    email: "joao.victor@faculdadecci.com.br",
     xp: 2480,
     level: 2,
     streak: 28,
@@ -1491,7 +1491,7 @@ export const initialClassStudents = [
   {
     id: "s2",
     name: "Letícia Ramos",
-    email: "leticia.ramos@portalcci.com.br",
+    email: "leticia.ramos@faculdadecci.com.br",
     xp: 2330,
     level: 2,
     streak: 21,
@@ -1505,7 +1505,7 @@ export const initialClassStudents = [
   {
     id: "s3",
     name: "Carlos Eduardo",
-    email: "carlos.eduardo@portalcci.com.br",
+    email: "carlos.eduardo@faculdadecci.com.br",
     xp: 2110,
     level: 2,
     streak: 19,
@@ -1519,7 +1519,7 @@ export const initialClassStudents = [
   {
     id: "s4",
     name: "Ana Clara",
-    email: "ana.clara@portalcci.com.br",
+    email: "ana.clara@faculdadecci.com.br",
     xp: 1970,
     level: 1,
     streak: 17,
@@ -1533,7 +1533,7 @@ export const initialClassStudents = [
   {
     id: "s5",
     name: "Marina Silva",
-    email: "marina.silva@portalcci.com.br",
+    email: "marina.silva@faculdadecci.com.br",
     xp: 1500,
     level: 1,
     streak: 12,
@@ -1547,7 +1547,7 @@ export const initialClassStudents = [
   {
     id: "s6",
     name: "Rafael Nunes",
-    email: "rafael.nunes@portalcci.com.br",
+    email: "rafael.nunes@faculdadecci.com.br",
     xp: 1860,
     level: 1,
     streak: 0,
@@ -1561,7 +1561,7 @@ export const initialClassStudents = [
   {
     id: "s7",
     name: "Lucas Barbosa",
-    email: "lucas.barbosa@portalcci.com.br",
+    email: "lucas.barbosa@faculdadecci.com.br",
     xp: 980,
     level: 1,
     streak: 0,
@@ -1575,7 +1575,7 @@ export const initialClassStudents = [
   {
     id: "s8",
     name: "Beatriz Mendes",
-    email: "beatriz.mendes@portalcci.com.br",
+    email: "beatriz.mendes@faculdadecci.com.br",
     xp: 1620,
     level: 1,
     streak: 8,
